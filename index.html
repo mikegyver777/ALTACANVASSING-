@@ -212,10 +212,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   .obox { padding: 24px 20px; }
   .header { padding: 12px 16px; }
   .wrap { padding: 14px 12px 40px; }
+  #earningsDash { grid-template-columns: 1fr 1fr 1fr; }
 }
 
 /* ── MOBILE (≤480px) ── */
 @media (max-width: 480px) {
+  #earningsDash { grid-template-columns: 1fr; }
   /* Header: stack logo+name above buttons */
   .header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 14px; }
   .hacts  { width: 100%; justify-content: flex-end; }
@@ -291,6 +293,67 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   /* Modal action buttons: full width stack */
   .modal-actions-row { flex-direction: column-reverse; }
   .modal-actions-row .btn { width: 100%; justify-content: center; }
+
+  /* Appointment layout: hide table, show cards */
+  .appt-desktop { display: none !important; }
+  .appt-mobile  { display: block !important; }
+
+  /* Earnings dashboard: single column */
+  #earningsDash { grid-template-columns: 1fr !important; gap: 8px; }
+
+  /* Earnings cards: compact on mobile */
+  #earningsDash > div { padding: 14px 16px; }
+  #earningsDash .dash-amt { font-size: 26px !important; }
+
+  /* Pay block: label and amount stack nicely */
+  .pay-block-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .pay-block-amount { font-size: 26px !important; }
+
+  /* Week nav spacing */
+  .week-nav { gap: 6px; }
+}
+
+/* Appointment card styles (mobile only) */
+.appt-card {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
+}
+.appt-card:last-child { border-bottom: none; }
+.appt-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.appt-card-name  { font-size: 15px; font-weight: 700; color: var(--text); }
+.appt-card-date  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.appt-card-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.appt-card-date-item { }
+.appt-card-date-lbl  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin-bottom: 2px; }
+.appt-card-date-val  { font-size: 13px; font-weight: 600; }
+.appt-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.appt-card-pay { }
+.appt-card-pay-amt  { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 700; line-height: 1; }
+.appt-card-pay-lbl  { font-size: 10px; color: var(--text2); margin-top: 2px; }
+.appt-card-actions  { display: flex; gap: 6px; }
+
+/* Desktop: show table, hide cards */
+@media (min-width: 481px) {
+  .appt-desktop { display: block !important; }
+  .appt-mobile  { display: none !important; }
 }
 </style>
 </head>
@@ -464,6 +527,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <!-- ════ MAIN APP ════ -->
 <div class="wrap" id="appWrap" style="display:none;">
 
+  <!-- EARNINGS DASHBOARD -->
+  <div id="earningsDash" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"></div>
+
   <!-- Week Nav -->
   <div class="week-nav no-print">
     <button class="btn btn-outline btn-icon" id="prevBtn" onclick="prevWeek()">◀</button>
@@ -501,7 +567,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     </div>
   </div>
 
-  <!-- Appointments -->
+  <!-- Appointments Organizer -->
   <div class="card">
     <div class="card-head">
       <div class="card-head-title">📋 Appointments This Week</div>
@@ -510,19 +576,18 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     <div id="apptArea"></div>
   </div>
 
-  <!-- Pay Summary -->
+  <!-- Pay Breakdown -->
   <div class="card">
     <div class="card-head">
-      <div class="card-head-title">💰 Pay Summary — This Week</div>
+      <div class="card-head-title">💰 Pay Breakdown — This Week</div>
     </div>
-
     <div class="pay-blocks" id="payBlocks"></div>
   </div>
 
   <!-- All-Time -->
   <div class="card">
     <div class="at-toggle" id="atToggle" onclick="toggleAt()">
-      <div class="at-title">📊 All-Time Totals <span class="at-hint">(click to expand)</span></div>
+      <div class="at-title">📊 All-Time Totals <span class="at-hint">(tap to expand)</span></div>
       <span id="atChev" style="color:var(--text2);font-size:13px;">▼</span>
     </div>
     <div id="atBody" style="display:none;"></div>
@@ -594,9 +659,11 @@ function weekOfDate(date, weeks) {
 function init() {
   hydrate();
   if (!D.profile) {
+    // First-ever launch — show setup
     document.getElementById('sStart').value = today();
     document.getElementById('setupOverlay').style.display = 'flex';
   } else {
+    // Profile exists — go straight to app, NEVER show setup overlay again
     startApp();
   }
 }
@@ -717,80 +784,189 @@ function setWeek(field, val) {
 function renderAppts() {
   const appts = D.weeks[D.cur].appts;
   const area  = document.getElementById('apptArea');
+
   if (!appts.length) {
     area.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>
-      <div class="empty-text">No appointments logged this week.<br>Click <strong>+ Add Appointment</strong> to add one.</div></div>`;
+      <div class="empty-text">No appointments logged this week.<br>Tap <strong>+ Add Appointment</strong> to log one.</div></div>`;
     return;
   }
 
-  const rows = appts.map(a => {
-    const badge = outcomeBadge(a.outcome);
-    let contractCol = '<span style="color:var(--text2);">—</span>';
-    let statusTag   = '';
+  // Sort: pending outcomes first, then by date
+  const sorted = [...appts].sort((a,b) => {
+    const pending = v => (!v.outcome || v.outcome === 'pending') ? 0 : 1;
+    return pending(a) - pending(b) || (a.date||'').localeCompare(b.date||'');
+  });
+
+  const rows = sorted.map(a => {
     const isPending = !a.outcome || a.outcome === 'pending';
+    const isSale    = a.outcome === 'sale';
 
-    if (isPending) {
-      // No outcome yet — prompt to update
-      statusTag = `<span class="pay-tag" style="background:#fffbeb;color:#b45309;border:1px dashed #f59e0b;">Tap ✏️ to set outcome after appointment</span>`;
-    } else if (a.outcome === 'sale') {
-      contractCol = `<div style="font-family:'DM Mono',monospace;font-weight:600;">${fMoney(parseFloat(a.contract)||0)}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px;">Job: ${fDate(a.jobStart)}${a.jobEnd?' → '+fDate(a.jobEnd):' → <em style="color:var(--blue)">In progress</em>'}`;
-      contractCol += '</div>';
+    // Outcome cell
+    const badge = outcomeBadge(a.outcome);
 
-      if (a.jobEnd) {
-        const completedInWeek = weekOfDate(a.jobEnd, D.weeks);
-        const paidInWeek      = completedInWeek + 1;
-        if (completedInWeek === D.cur - 1) {
-          statusTag = `<span class="pay-tag pay-tag-paid">✅ Commission paid this week</span>`;
-        } else if (completedInWeek === D.cur) {
-          statusTag = `<span class="pay-tag pay-tag-queued">➡️ Commission paid next week (Week ${paidInWeek+1})</span>`;
-        } else if (completedInWeek < D.cur - 1 && completedInWeek >= 0) {
-          statusTag = `<span class="pay-tag pay-tag-prev">✓ Commission paid in Week ${paidInWeek+1}</span>`;
-        } else if (completedInWeek === -1) {
-          statusTag = `<span class="pay-tag pay-tag-queued">➡️ Commission queued (job complete)</span>`;
-        } else {
-          statusTag = `<span class="pay-tag pay-tag-queued">➡️ Commission paid in Week ${paidInWeek+1}</span>`;
-        }
-      } else {
-        statusTag = `<span class="pay-tag pay-tag-pending">⏳ Pending — job not yet complete</span>`;
-      }
-    } else if (a.outcome === 'demo' || a.outcome === 'canceled') {
-      if (D.cur < D.weeks.length - 1) {
-        statusTag = `<span class="pay-tag pay-tag-queued">➡️ Demo pay in Week ${D.cur+2}</span>`;
-      } else {
-        statusTag = `<span class="pay-tag pay-tag-queued">➡️ Demo pay next week</span>`;
-      }
+    // Job dates — only for sales
+    let jobStartCell = '<span style="color:#d1d5db;">—</span>';
+    let jobEndCell   = '<span style="color:#d1d5db;">—</span>';
+    if (isSale) {
+      jobStartCell = a.jobStart
+        ? `<span style="font-weight:600;">${fDate(a.jobStart)}</span>`
+        : `<span style="color:#f59e0b;font-size:11px;">Not set</span>`;
+      jobEndCell = a.jobEnd
+        ? `<span style="font-weight:600;color:var(--green);">${fDate(a.jobEnd)}</span>`
+        : `<span style="color:var(--blue);font-size:11px;font-weight:600;">In Progress</span>`;
     }
 
-    const rowStyle = isPending ? 'background:#fffdf5;' : '';
+    // Pay amount for this appointment
+    let payCell = '<span style="color:#d1d5db;">—</span>';
+    if (isSale && a.jobEnd) {
+      const amt = (parseFloat(a.contract)||0) * ((D.profile.comm||0)/100);
+      const ciw = weekOfDate(a.jobEnd, D.weeks);
+      const paidWk = ciw >= 0 ? `Wk ${ciw+2}` : 'Next wk';
+      const color = ciw === D.cur-1 ? 'var(--green)' : 'var(--blue)';
+      payCell = `<span style="font-family:'DM Mono',monospace;font-weight:700;color:${color};">${fMoney(amt)}</span><div style="font-size:10px;color:var(--text2);">${ciw === D.cur-1 ? 'Paid this wk' : paidWk}</div>`;
+    } else if (isSale && !a.jobEnd) {
+      const amt = (parseFloat(a.contract)||0) * ((D.profile.comm||0)/100);
+      payCell = `<span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--blue);">${fMoney(amt)}</span><div style="font-size:10px;color:var(--blue);">Pending</div>`;
+    } else if (a.outcome === 'demo' || a.outcome === 'canceled') {
+      payCell = `<span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--amber);">${fMoney(D.profile.demo)}</span><div style="font-size:10px;color:var(--text2);">Next week</div>`;
+    } else if (isPending) {
+      payCell = `<span style="font-size:11px;color:#b45309;">TBD</span>`;
+    }
 
-    return `<tr style="${rowStyle}">
-      <td>
-        <div style="font-weight:600;">${esc(a.cust)}</div>
-        ${statusTag ? `<div style="margin-top:4px;">${statusTag}</div>` : ''}
+    const rowBg = isPending ? 'background:#fffdf5;' : '';
+
+    return `<tr style="${rowBg}">
+      <td style="padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;${isPending ? 'cursor:pointer;' : ''}" ${isPending ? `onclick="editAppt('${a.id}')" title="Tap to set outcome"` : ''}>
+        <div style="font-weight:600;font-size:14px;">${esc(a.cust)}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">${fDate(a.date)}${isPending ? ' <span style="color:#b45309;">· tap to set outcome</span>' : ''}</div>
       </td>
-      <td style="white-space:nowrap;">${fDate(a.date)}</td>
-      <td>${badge}</td>
-      <td>${contractCol}</td>
-      <td style="text-align:right;white-space:nowrap;" class="no-print">
+      <td style="padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;">${
+        isPending
+          ? `<span class="badge badge-awaiting" onclick="editAppt('${a.id}')" style="cursor:pointer;" title="Tap to set outcome">⏳ Tap to Set Outcome</span>`
+          : badge
+      }</td>
+      <td style="padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:13px;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:3px;">Start</div>
+        ${jobStartCell}
+      </td>
+      <td style="padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:13px;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:3px;">Complete</div>
+        ${jobEndCell}
+      </td>
+      <td style="padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;text-align:right;">
+        ${payCell}
+      </td>
+      <td style="padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;text-align:right;white-space:nowrap;" class="no-print">
         <button class="btn btn-outline btn-icon btn-sm" onclick="editAppt('${a.id}')" title="Edit">✏️</button>
         <button class="btn btn-danger btn-icon btn-sm" onclick="delAppt('${a.id}')" title="Delete">🗑</button>
       </td>
     </tr>`;
   }).join('');
 
-  area.innerHTML = `<div style="overflow-x:auto;">
-    <table class="appt-table">
-      <thead><tr>
-        <th>Customer / Payment Status</th>
-        <th>Apt. Date</th>
-        <th>Outcome</th>
-        <th>Contract / Job Dates</th>
-        <th class="no-print"></th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>`;
+  // Count awaiting outcome
+  const awaitingCount = appts.filter(a => !a.outcome || a.outcome === 'pending').length;
+  const awaitingNote  = awaitingCount > 0
+    ? `<div style="padding:8px 14px;background:#fffbeb;border-bottom:1px solid #fde68a;font-size:12px;color:#b45309;">
+        ⏳ <strong>${awaitingCount}</strong> appointment${awaitingCount>1?'s':''} awaiting outcome — tap ✏️ to update
+       </div>`
+    : '';
+
+  // ── Mobile card layout ──
+  const cards = sorted.map(a => {
+    const isPending = !a.outcome || a.outcome === 'pending';
+    const isSale    = a.outcome === 'sale';
+    const badge     = outcomeBadge(a.outcome);
+
+    // Outcome tap area for pending
+    const outcomePart = isPending
+      ? `<span class="badge badge-awaiting" onclick="editAppt('${a.id}')" style="cursor:pointer;">⏳ Tap to Set Outcome</span>`
+      : badge;
+
+    // Job dates section (sales only)
+    let dateSection = '';
+    if (isSale) {
+      const startVal = a.jobStart
+        ? `<span style="font-weight:600;">${fDate(a.jobStart)}</span>`
+        : `<span style="color:#f59e0b;">Not set</span>`;
+      const endVal = a.jobEnd
+        ? `<span style="font-weight:600;color:var(--green);">${fDate(a.jobEnd)}</span>`
+        : `<span style="color:var(--blue);font-weight:600;">In Progress</span>`;
+      dateSection = `<div class="appt-card-dates">
+        <div class="appt-card-date-item">
+          <div class="appt-card-date-lbl">Job Start</div>
+          <div class="appt-card-date-val">${startVal}</div>
+        </div>
+        <div class="appt-card-date-item">
+          <div class="appt-card-date-lbl">Job Complete</div>
+          <div class="appt-card-date-val">${endVal}</div>
+        </div>
+      </div>`;
+    }
+
+    // Pay for this appointment
+    let payAmt = '', payLbl = '';
+    if (isSale && a.jobEnd) {
+      const amt = (parseFloat(a.contract)||0) * ((D.profile.comm||0)/100);
+      const ciw = weekOfDate(a.jobEnd, D.weeks);
+      payAmt = fMoney(amt);
+      payLbl = ciw === D.cur-1 ? 'Paid this week' : `Paid Wk ${ciw+2}`;
+    } else if (isSale && !a.jobEnd) {
+      const amt = (parseFloat(a.contract)||0) * ((D.profile.comm||0)/100);
+      payAmt = fMoney(amt);
+      payLbl = 'Pending completion';
+    } else if (a.outcome === 'demo' || a.outcome === 'canceled') {
+      payAmt = fMoney(D.profile.demo);
+      payLbl = 'Paid next week';
+    } else if (isPending) {
+      payAmt = 'TBD';
+      payLbl = 'Set outcome first';
+    }
+
+    const cardBg = isPending ? 'background:#fffdf5;' : '';
+    const nameClick = isPending ? `onclick="editAppt('${a.id}')" style="cursor:pointer;"` : '';
+
+    return `<div class="appt-card" style="${cardBg}">
+      <div class="appt-card-top">
+        <div ${nameClick}>
+          <div class="appt-card-name">${esc(a.cust)}</div>
+          <div class="appt-card-date">${fDate(a.date)}</div>
+        </div>
+        <div>${outcomePart}</div>
+      </div>
+      ${dateSection}
+      <div class="appt-card-bottom">
+        <div class="appt-card-pay">
+          <div class="appt-card-pay-amt" style="color:${isPending ? '#b45309' : isSale && a.jobEnd ? 'var(--green)' : isSale ? 'var(--blue)' : 'var(--amber)'};">${payAmt}</div>
+          <div class="appt-card-pay-lbl">${payLbl}</div>
+        </div>
+        <div class="appt-card-actions no-print">
+          <button class="btn btn-outline btn-icon btn-sm" onclick="editAppt('${a.id}')" title="Edit">✏️</button>
+          <button class="btn btn-danger btn-icon btn-sm" onclick="delAppt('${a.id}')" title="Delete">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  area.innerHTML = `
+    ${awaitingNote}
+    <!-- Desktop: table -->
+    <div class="appt-desktop" style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--gray-lt);">
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text2);border-bottom:1.5px solid var(--border);">Customer / Date</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text2);border-bottom:1.5px solid var(--border);">Outcome</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text2);border-bottom:1.5px solid var(--border);">Job Start</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text2);border-bottom:1.5px solid var(--border);">Job Complete</th>
+            <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text2);border-bottom:1.5px solid var(--border);">Pay</th>
+            <th style="border-bottom:1.5px solid var(--border);" class="no-print"></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <!-- Mobile: cards -->
+    <div class="appt-mobile">${cards}</div>`;
 }
 
 function outcomeBadge(o) {
@@ -939,83 +1115,88 @@ function renderPay() {
   const p = D.profile;
   const isFirstWeek = D.cur === 0;
 
+  // ── Earnings Dashboard ──
+  let tBase=0,tDemo=0,tComm=0; let pendingOnce=0;
+  for (let i=0;i<D.weeks.length;i++) {
+    const c=calcWeek(i); tBase+=c.base; tDemo+=c.demoPay; tComm+=c.commPaid;
+  }
+  for (const wk of D.weeks) for (const a of (wk.appts||[])) {
+    if (a.outcome==='sale'&&!a.jobEnd) pendingOnce+=(parseFloat(a.contract)||0)*((p.comm||0)/100);
+  }
+  const grandTotal = tBase + tDemo + tComm;
+
+  document.getElementById('earningsDash').innerHTML = `
+    <div style="background:var(--navy);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#94a3b8;margin-bottom:6px;">This Week's Pay</div>
+      <div style="font-family:'DM Mono',monospace;font-size:30px;font-weight:700;color:#fff;line-height:1;" class="dash-amt">${fMoney(total)}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px;">Week ${D.cur+1} · ${parseFloat(D.weeks[D.cur].hrs)||0} hrs worked</div>
+    </div>
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text2);margin-bottom:6px;">Commission Pending</div>
+      <div style="font-family:'DM Mono',monospace;font-size:30px;font-weight:700;color:var(--blue);line-height:1;" class="dash-amt">${fMoney(pendingOnce)}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px;">Paid when jobs complete</div>
+    </div>
+    <div style="background:var(--amber-lt);border:1.5px solid #f9c74f;border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#92400e;margin-bottom:6px;">Total Earned All-Time</div>
+      <div style="font-family:'DM Mono',monospace;font-size:30px;font-weight:700;color:var(--navy);line-height:1;" class="dash-amt">${fMoney(grandTotal)}</div>
+      <div style="font-size:11px;color:#92400e;margin-top:4px;">Across ${D.weeks.length} week${D.weeks.length===1?'':'s'}</div>
+    </div>`;
+
+  // ── Pay Breakdown blocks ──
   let html = '';
 
-  // Week 1 notice
   if (isFirstWeek) {
     html += `<div class="first-week-notice">
-      <strong>Week 1:</strong> Only base pay is included this week. Demo pay and commission start appearing from <strong>Week 2</strong> onward — earned last week, paid this week.
+      <strong>Week 1:</strong> Demo pay and commission appear from <strong>Week 2</strong> onward — earned last week, paid this week.
     </div>`;
   }
 
-  // Base pay block
   html += `<div class="pay-block block-base">
     <div class="pay-block-head">
       <div class="pay-block-label">🕐 Base Pay — This Week</div>
       <div class="pay-block-amount">${fMoney(base)}</div>
     </div>
-    <div class="pay-block-detail">
-      ${parseFloat(D.weeks[D.cur].hrs)||0} hours worked × ${fMoney(p.hourly)}/hr
-    </div>
+    <div class="pay-block-detail">${parseFloat(D.weeks[D.cur].hrs)||0} hours × ${fMoney(p.hourly)}/hr</div>
   </div>`;
 
-  // Demo pay block
   html += `<div class="pay-block block-demo">
     <div class="pay-block-head">
       <div class="pay-block-label">🟡 Demo Pay — From Last Week</div>
       <div class="pay-block-amount">${fMoney(demoPay)}</div>
     </div>
-    <div class="pay-block-detail">
-      ${demoCount > 0
-        ? `${demoCount} demo(s) × ${fMoney(p.demo)}/demo${demoNames.length ? ' &nbsp;·&nbsp; ' + demoNames.map(n=>'<span>'+esc(n)+'</span>').join(', ') : ''}`
-        : isFirstWeek ? 'No previous week to pull demos from' : 'No demos were recorded last week'
-      }
-    </div>
+    <div class="pay-block-detail">${demoCount > 0 ? `${demoCount} demo(s) × ${fMoney(p.demo)}` : isFirstWeek ? 'No previous week' : 'No demos last week'}</div>
   </div>`;
 
-  // Commission paid block
   html += `<div class="pay-block block-comm">
     <div class="pay-block-head">
-      <div class="pay-block-label">✅ Commission — From Last Week's Completions</div>
+      <div class="pay-block-label">✅ Commission — Last Week's Completions</div>
       <div class="pay-block-amount">${fMoney(commPaid)}</div>
     </div>
-    <div class="pay-block-detail">
-      ${salesPaid > 0
-        ? `${salesPaid} job(s) completed last week × ${p.comm}% of contract`
-        : isFirstWeek ? 'No previous week to pull completions from' : 'No jobs completed last week'
-      }
-    </div>
+    <div class="pay-block-detail">${salesPaid > 0 ? `${salesPaid} job(s) completed last week · ${p.comm}% of contract` : isFirstWeek ? 'No previous week' : 'No jobs completed last week'}</div>
   </div>`;
 
-  // Queued notice (job completed this week → paid next week)
   if (commQueued > 0) {
     html += `<div class="notice notice-queued">
-      <div class="notice-left">
-        <div class="notice-icon">➡️</div>
-        <div>
-          <div class="notice-title">Queued for Next Week</div>
-          <div class="notice-sub">${salesQueued} job(s) completed this week — commission paid in Week ${D.cur+2}</div>
+      <div class="notice-left"><div class="notice-icon">➡️</div>
+        <div><div class="notice-title">Queued for Next Week</div>
+          <div class="notice-sub">${salesQueued} job(s) completed this week — paid in Week ${D.cur+2}</div>
         </div>
       </div>
       <div class="notice-amt">${fMoney(commQueued)}</div>
     </div>`;
   }
 
-  // Pending notice (no completion date)
   if (commPending > 0) {
     html += `<div class="notice notice-pending">
-      <div class="notice-left">
-        <div class="notice-icon">⏳</div>
-        <div>
-          <div class="notice-title">Commission Pending</div>
-          <div class="notice-sub">${salesPending} job(s) not yet completed — paid the week after each job finishes</div>
+      <div class="notice-left"><div class="notice-icon">⏳</div>
+        <div><div class="notice-title">Commission Pending</div>
+          <div class="notice-sub">${salesPending} job(s) not yet completed</div>
         </div>
       </div>
       <div class="notice-amt">${fMoney(commPending)}</div>
     </div>`;
   }
 
-  // Total
   const parts = [];
   if (base > 0)     parts.push(`${fMoney(base)} base`);
   if (demoPay > 0)  parts.push(`${fMoney(demoPay)} demos`);
