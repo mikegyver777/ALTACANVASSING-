@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alta California — Canvasser Pay Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f3f0ef;
+  --surface:  #ffffff;
+  --navy:     #1e1b1b;
+  --navy2:    #2d2828;
+  --amber:    #8e3d39;
+  --amber-lt: #fdf2f2;
+  --green:    #2d6a4f;
+  --green-lt: #f0faf5;
+  --red:      #b91c1c;
+  --red-lt:   #fff1f1;
+  --blue:     #1d4ed8;
+  --blue-lt:  #eff4ff;
+  --purple:   #6d28d9;
+  --purple-lt:#f5f2ff;
+  --gray:     #6b7280;
+  --gray-lt:  #f9f7f7;
+  --border:   #e5e0df;
+  --text:     #1c1a1a;
+  --text2:    #6b7280;
+  --radius:   10px;
+  --shadow:   0 1px 4px rgba(0,0,0,0.08);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.14);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
+
+/* OVERLAY */
+.overlay { position: fixed; inset: 0; background: rgba(26,46,68,0.75); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.obox { background: var(--surface); border-radius: 16px; padding: 30px; width: 100%; max-width: 500px; box-shadow: var(--shadow-md); max-height: 92vh; overflow-y: auto; }
+.otitle { font-size: 22px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.osub   { font-size: 13px; color: var(--text2); margin-bottom: 22px; line-height: 1.6; }
+
+/* HEADER */
+.header { background: var(--navy); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.hname  { font-size: 19px; font-weight: 700; color: #fff; }
+.hname span { color: #fbbf24; }
+.hmeta  { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.hacts  { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* BUTTONS */
+.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.btn:disabled { opacity: 0.38; cursor: default; }
+.btn-primary { background: var(--amber); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #b45309; }
+.btn-navy    { background: var(--navy); color: #fff; }
+.btn-navy:hover:not(:disabled) { background: var(--navy2); }
+.btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+.btn-outline:hover { background: var(--gray-lt); }
+.btn-ghost   { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+.btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.18); }
+.btn-danger  { background: transparent; color: var(--red); border: 1px solid #fca5a5; }
+.btn-danger:hover { background: var(--red-lt); }
+.btn-sm   { padding: 5px 12px; font-size: 13px; }
+.btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 7px; font-size: 14px; }
+.btn-full { width: 100%; justify-content: center; padding: 12px; font-size: 16px; }
+
+/* FORMS */
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text2); margin-bottom: 5px; }
+.input, .select { width: 100%; background: var(--gray-lt); border: 1.5px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; transition: border-color 0.15s; }
+.input:focus, .select:focus { outline: none; border-color: var(--navy); background: #fff; }
+.input::placeholder { color: #b0bec5; }
+.select option { background: #fff; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.err  { color: var(--red); font-size: 13px; margin-top: 8px; display: none; }
+.divider { border: none; border-top: 1.5px solid var(--border); margin: 16px 0; }
+
+/* LAYOUT */
+.wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
+
+/* WEEK NAV */
+.week-nav { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; box-shadow: var(--shadow); }
+.wk-center  { text-align: center; flex: 1; }
+.wk-title   { font-size: 20px; font-weight: 700; color: var(--navy); }
+.wk-dates   { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.wk-right   { display: flex; gap: 8px; align-items: center; }
+
+/* CARD */
+.card      { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; margin-bottom: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.card-head { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-bottom: 1.5px solid var(--border); background: var(--gray-lt); }
+.card-head-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+.card-body { padding: 20px; }
+
+/* APPOINTMENTS TABLE */
+.appt-table { width: 100%; border-collapse: collapse; }
+.appt-table th { text-align: left; padding: 8px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); background: var(--gray-lt); border-bottom: 1.5px solid var(--border); }
+.appt-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 14px; }
+.appt-table tr:last-child td { border-bottom: none; }
+.appt-table tbody tr:hover td { background: #fafbfc; }
+
+/* BADGES */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
+.badge-sale     { background: var(--green-lt);  color: var(--green);  }
+.badge-demo     { background: var(--amber-lt);  color: var(--amber);  }
+.badge-nosale   { background: var(--gray-lt);   color: var(--gray);   border: 1px solid var(--border); }
+.badge-canceled { background: var(--red-lt);    color: var(--red);    }
+.badge-awaiting { background: #fffbeb; color: #b45309; border: 1.5px dashed #f59e0b; }
+
+/* PAYMENT STATUS tags (for sale rows) */
+.pay-tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; margin-top: 4px; }
+.pay-tag-paid    { background: var(--green-lt);  color: var(--green);  }
+.pay-tag-queued  { background: var(--purple-lt); color: var(--purple); }
+.pay-tag-pending { background: var(--blue-lt);   color: var(--blue);   }
+.pay-tag-prev    { background: var(--gray-lt);   color: var(--gray);   border: 1px solid var(--border); }
+
+/* PAY SUMMARY */
+.pay-section { padding: 0; }
+
+/* Pay timing explanation banner */
+.timing-banner { background: var(--navy); color: #fff; padding: 12px 20px; font-size: 13px; line-height: 1.6; display: flex; gap: 10px; align-items: flex-start; }
+.timing-banner-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.timing-banner strong { color: #fbbf24; }
+
+/* Pay blocks */
+.pay-blocks { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+
+.pay-block { border-radius: 10px; border: 1.5px solid var(--border); overflow: hidden; }
+.pay-block-head { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pay-block-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.pay-block-amount { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 600; }
+.pay-block-detail { padding: 0 16px 10px; font-size: 12px; color: var(--text2); line-height: 1.7; }
+.pay-block-detail span { display: inline-block; margin-right: 10px; }
+
+.block-base   { border-color: var(--border); }
+.block-base .pay-block-head { background: var(--gray-lt); }
+.block-base .pay-block-label { color: var(--navy); }
+
+.block-demo   { border-color: #fde68a; }
+.block-demo .pay-block-head { background: var(--amber-lt); }
+.block-demo .pay-block-label { color: var(--amber); }
+.block-demo .pay-block-amount { color: var(--amber); }
+
+.block-comm   { border-color: #bbf7d0; }
+.block-comm .pay-block-head { background: var(--green-lt); }
+.block-comm .pay-block-label { color: var(--green); }
+.block-comm .pay-block-amount { color: var(--green); }
+
+/* Pending / Queued notices */
+.notice { border-radius: 10px; border: 1.5px solid; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.notice-queued  { background: var(--purple-lt); border-color: #c4b5fd; }
+.notice-pending { background: var(--blue-lt);   border-color: #bfdbfe; }
+.notice-left    { display: flex; align-items: center; gap: 10px; }
+.notice-icon    { font-size: 20px; }
+.notice-title   { font-size: 13px; font-weight: 700; }
+.notice-sub     { font-size: 12px; margin-top: 1px; }
+.notice-queued  .notice-title { color: var(--purple); }
+.notice-queued  .notice-sub   { color: #7c3aed; }
+.notice-pending .notice-title { color: var(--blue); }
+.notice-pending .notice-sub   { color: #2563eb; }
+.notice-amt { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 700; }
+.notice-queued  .notice-amt { color: var(--purple); }
+.notice-pending .notice-amt { color: var(--blue); }
+
+/* Week 1 notice */
+.first-week-notice { background: var(--navy); color: #94a3b8; padding: 12px 20px; font-size: 13px; line-height: 1.6; border-radius: 10px; margin-bottom: 10px; }
+.first-week-notice strong { color: #fbbf24; }
+
+/* TOTAL BAR */
+.total-bar { background: var(--navy); border-radius: 10px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.total-label { font-size: 13px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+.total-breakdown { font-size: 12px; color: #64748b; margin-top: 3px; }
+.total-amount { font-family: 'DM Mono', monospace; font-size: 42px; font-weight: 700; color: #fff; line-height: 1; }
+
+/* ALL-TIME */
+.at-toggle { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; transition: background 0.15s; }
+.at-toggle:hover { background: var(--gray-lt); }
+.at-toggle.open { border-bottom: 1.5px solid var(--border); }
+.at-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+.at-hint  { font-size: 11px; font-weight: 400; color: var(--text2); text-transform: none; letter-spacing: 0; }
+.at-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; padding: 20px; }
+.at-item  { text-align: center; padding: 14px 10px; background: var(--gray-lt); border: 1.5px solid var(--border); border-radius: 10px; }
+.at-val   { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 700; color: var(--navy); }
+.at-lbl   { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 36px 20px; color: var(--text2); }
+.empty-icon { font-size: 34px; margin-bottom: 10px; }
+.empty-text { font-size: 13px; line-height: 1.8; }
+
+/* PRINT */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body, .header, .wrap, .card, .week-nav, .overlay, #appWrap { display: none !important; }
+  #printPage {
+    display: block !important;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: #1c1a1a;
+    background: #fff;
+    padding: 0;
+    margin: 0;
+  }
+}
+
+/* ── TABLET (≤768px) ── */
+@media (max-width: 768px) {
+  .row3 { grid-template-columns: 1fr 1fr; }
+  .at-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .pay-block-amount { font-size: 22px; }
+  .total-amount { font-size: 34px; }
+  .obox { padding: 24px 20px; }
+  .header { padding: 12px 16px; }
+  .wrap { padding: 14px 12px 40px; }
+}
+
+/* ── MOBILE (≤480px) ── */
+@media (max-width: 480px) {
+  /* Header: stack logo+name above buttons */
+  .header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 14px; }
+  .hacts  { width: 100%; justify-content: flex-end; }
+  .hname  { font-size: 16px; }
+  .hmeta  { font-size: 11px; }
+  .header img { height: 42px !important; }
+
+  /* Modals: full-width, smaller padding */
+  .overlay { padding: 0; align-items: flex-end; }
+  .obox { border-radius: 16px 16px 0 0; padding: 20px 16px; max-height: 96vh; }
+  .otitle { font-size: 18px; }
+  .osub   { font-size: 12px; margin-bottom: 16px; }
+
+  /* Forms: all single column, larger tap targets */
+  .row2, .row3 { grid-template-columns: 1fr; gap: 10px; }
+  .input, .select { min-height: 46px; font-size: 16px; /* prevents iOS zoom */ padding: 10px 12px; }
+  .label { font-size: 11px; }
+
+  /* Buttons: bigger tap targets */
+  .btn { min-height: 42px; }
+  .btn-sm { min-height: 36px; padding: 6px 12px; }
+  .btn-icon { width: 36px; height: 36px; }
+  .btn-full { min-height: 50px; font-size: 16px; }
+
+  /* Week nav: compact */
+  .week-nav { padding: 10px 12px; gap: 8px; }
+  .wk-title { font-size: 17px; }
+  .wk-dates { font-size: 12px; }
+  .wk-right { gap: 6px; }
+
+  /* Cards */
+  .card-head { padding: 12px 14px; }
+  .card-head-title { font-size: 12px; }
+  .card-body { padding: 14px; }
+
+  /* Appointment table: tighten up, let it scroll */
+  .appt-table th { padding: 6px 10px; font-size: 10px; }
+  .appt-table td { padding: 10px 10px; font-size: 13px; }
+
+  /* Pay blocks */
+  .pay-blocks { padding: 14px; gap: 8px; }
+  .pay-block-head { padding: 10px 14px; flex-wrap: wrap; gap: 4px; }
+  .pay-block-label { font-size: 12px; }
+  .pay-block-amount { font-size: 24px; }
+  .pay-block-detail { padding: 0 14px 10px; font-size: 12px; }
+
+  /* Notices */
+  .notice { padding: 10px 14px; }
+  .notice-amt { font-size: 20px; }
+  .notice-title { font-size: 12px; }
+  .notice-sub { font-size: 11px; }
+
+  /* Total bar */
+  .total-bar { padding: 14px 16px; }
+  .total-amount { font-size: 32px; }
+  .total-label { font-size: 12px; }
+  .total-breakdown { font-size: 11px; }
+
+  /* First week notice */
+  .first-week-notice { font-size: 12px; padding: 10px 14px; }
+
+  /* All-time */
+  .at-toggle { padding: 12px 14px; }
+  .at-grid { grid-template-columns: 1fr 1fr; gap: 8px; padding: 14px; }
+  .at-val { font-size: 18px; }
+  .at-lbl { font-size: 10px; }
+
+  /* Empty state */
+  .empty { padding: 28px 16px; }
+  .empty-icon { font-size: 28px; }
+  .empty-text { font-size: 12px; }
+
+  /* Modal action buttons: full width stack */
+  .modal-actions-row { flex-direction: column-reverse; }
+  .modal-actions-row .btn { width: 100%; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════ SETUP ════ -->
+<div class="overlay" id="setupOverlay">
+  <div class="obox">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;"><img src="data:image/jpeg;base64,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" alt="Alta California" style="height:56px;width:auto;border-radius:4px;"></div><div class="otitle">Canvasser Pay Tracker</div>
+    <p class="osub"><strong>Alta California Construction</strong> — Fill in your details once. Everything saves to your browser automatically. Your data never leaves your device.</p>
+
+    <div class="field">
+      <label class="label">Your Full Name</label>
+      <input type="text" class="input" id="sName" placeholder="e.g. Maria Gonzalez">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label class="label">Hourly Wage ($)</label>
+        <input type="number" class="input" id="sHourly" placeholder="15.00" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label class="label">Commission %</label>
+        <input type="number" class="input" id="sComm" placeholder="5" step="0.1" min="0">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label class="label">Demo Pay Per Demo ($)</label>
+        <input type="number" class="input" id="sDemoPay" placeholder="20.00" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label class="label">Program Start Date</label>
+        <input type="date" class="input" id="sStart">
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="saveProfile()">Save &amp; Start Tracking →</button>
+    <div class="err" id="sErr"></div>
+  </div>
+</div>
+
+<!-- ════ APPOINTMENT MODAL ════ -->
+<div class="overlay" id="apptOverlay" style="display:none;">
+  <div class="obox">
+    <div class="otitle" id="apptTitle">Add Appointment</div>
+    <input type="hidden" id="aEditId">
+
+    <div class="field">
+      <label class="label">Customer Name</label>
+      <input type="text" class="input" id="aCust" placeholder="e.g. Johnson Residence">
+    </div>
+    <div class="field">
+      <label class="label">Appointment Date</label>
+      <input type="date" class="input" id="aDate">
+    </div>
+    <div class="field">
+      <label class="label">Outcome <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text2);">(set after appointment)</span></label>
+      <select class="select" id="aOutcome" onchange="outcomeChanged()">
+        <option value="pending">⏳ Awaiting Outcome</option>
+        <option value="sale">✔ Sale</option>
+        <option value="demo">Demo (rep was there 1+ hr, no sale)</option>
+        <option value="no_sale">No Sale / No Demo</option>
+        <option value="canceled">Canceled Sale → Counts as Demo</option>
+      </select>
+    </div>
+
+    <!-- Sale fields -->
+    <div id="saleFields" style="display:none;">
+      <hr class="divider">
+      <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">💰 Sale Details</div>
+      <div class="field">
+        <label class="label">Contract Amount ($)</label>
+        <input type="number" class="input" id="aContract" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="label">Job Start Date</label>
+          <input type="date" class="input" id="aJobStart">
+        </div>
+        <div class="field">
+          <label class="label">Job Completion Date</label>
+          <input type="date" class="input" id="aJobEnd">
+        </div>
+      </div>
+      <div style="background:var(--green-lt);border:1.5px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#15803d;line-height:1.6;">
+        ✅ <strong>Commission is paid the week after the job completion date.</strong><br>
+        Leave "Job Completion Date" blank until the work is finished.
+      </div>
+    </div>
+
+    <!-- Canceled note -->
+    <div id="canceledNote" style="display:none;">
+      <hr class="divider">
+      <div style="background:var(--red-lt);border:1.5px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:12px;color:#b91c1c;line-height:1.6;">
+        🔴 <strong>Canceled Sale → Counted as a Demo.</strong><br>
+        You'll earn the demo pay the <em>following week</em>. No commission on this appointment.
+      </div>
+    </div>
+
+    <!-- Demo note -->
+    <div id="demoNote" style="display:none;">
+      <hr class="divider">
+      <div style="background:var(--amber-lt);border:1.5px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;line-height:1.6;">
+        🟡 <strong>Demo recorded.</strong><br>
+        Demo pay will appear in next week's pay summary.
+      </div>
+    </div>
+
+    <div class="modal-actions-row" style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closeApptModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAppt()">Save Appointment</button>
+    </div>
+    <div class="err" id="aErr"></div>
+  </div>
+</div>
+
+<!-- ════ EDIT PROFILE MODAL ════ -->
+<div class="overlay" id="profileOverlay" style="display:none;">
+  <div class="obox">
+    <div class="otitle">Edit Profile</div>
+    <div class="field">
+      <label class="label">Full Name</label>
+      <input type="text" class="input" id="eName">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label class="label">Hourly Wage ($)</label>
+        <input type="number" class="input" id="eHourly" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label class="label">Commission %</label>
+        <input type="number" class="input" id="eComm" step="0.1" min="0">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label class="label">Demo Pay ($)</label>
+        <input type="number" class="input" id="eDemoPay" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label class="label">Program Start Date</label>
+        <input type="date" class="input" id="eStart">
+      </div>
+    </div>
+    <div class="modal-actions-row" style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closeProfileModal()">Cancel</button>
+      <button class="btn btn-navy" onclick="saveProfileEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ HEADER ════ -->
+<div class="header no-print" id="appHeader" style="display:none;">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <img src="data:image/jpeg;base64,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" alt="Alta California Construction" style="height:52px;width:auto;border-radius:4px;background:#fff;padding:3px;">
+    <div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#c9a89a;margin-bottom:2px;">Alta California Construction</div>
+      <div class="hname" id="hName">Canvasser Pay Tracker</div>
+      <div class="hmeta" id="hMeta"></div>
+    </div>
+  </div>
+  <div class="hacts">
+    <button class="btn btn-ghost btn-sm" onclick="openProfileModal()">✏️ Edit Profile</button>
+    <button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨️ Print / Export</button>
+  </div>
+</div>
+
+<!-- Print-only page — built by doPrint() -->
+<div id="printPage" style="display:none;"></div>
+
+<!-- ════ MAIN APP ════ -->
+<div class="wrap" id="appWrap" style="display:none;">
+
+  <!-- Week Nav -->
+  <div class="week-nav no-print">
+    <button class="btn btn-outline btn-icon" id="prevBtn" onclick="prevWeek()">◀</button>
+    <div class="wk-center">
+      <div class="wk-title" id="wkTitle">Week 1</div>
+      <div class="wk-dates" id="wkDates">—</div>
+    </div>
+    <div class="wk-right">
+      <button class="btn btn-outline btn-icon" id="nextBtn" onclick="nextWeek()">▶</button>
+      <button class="btn btn-primary btn-sm" onclick="addWeek()">+ New Week</button>
+    </div>
+  </div>
+
+  <!-- Week Details -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-title">📅 Week Details</div>
+    </div>
+    <div class="card-body">
+      <div class="row3">
+        <div class="field" style="margin-bottom:0;">
+          <label class="label">Week Start Date</label>
+          <input type="date" class="input" id="wkStart" onchange="setWeek('s',this.value)">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label class="label">Week End Date</label>
+          <input type="date" class="input" id="wkEnd" onchange="setWeek('e',this.value)">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label class="label">Hours Worked</label>
+          <input type="number" class="input" id="wkHours" placeholder="40" step="0.5" min="0"
+            oninput="setWeek('hrs',parseFloat(this.value)||0)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointments -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-title">📋 Appointments This Week</div>
+      <button class="btn btn-primary btn-sm no-print" onclick="openApptModal()">+ Add Appointment</button>
+    </div>
+    <div id="apptArea"></div>
+  </div>
+
+  <!-- Pay Summary -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-title">💰 Pay Summary — This Week</div>
+    </div>
+
+    <div class="pay-blocks" id="payBlocks"></div>
+  </div>
+
+  <!-- All-Time -->
+  <div class="card">
+    <div class="at-toggle" id="atToggle" onclick="toggleAt()">
+      <div class="at-title">📊 All-Time Totals <span class="at-hint">(click to expand)</span></div>
+      <span id="atChev" style="color:var(--text2);font-size:13px;">▼</span>
+    </div>
+    <div id="atBody" style="display:none;"></div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════
+// DATA & PERSISTENCE
+// ══════════════════════════════════════
+const KEY = 'cptracker_v4';
+let D = { profile:null, weeks:[], cur:0 };
+let atOpen = false;
+
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch(e){} }
+function hydrate() {
+  try { const r = localStorage.getItem(KEY); if (r) D = JSON.parse(r); } catch(e){}
+  if (!Array.isArray(D.weeks)) D.weeks = [];
+  if (typeof D.cur !== 'number') D.cur = 0;
+}
+
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+const uid = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36);
+const today = () => new Date().toISOString().split('T')[0];
+
+function dStr(d) {
+  if (!(d instanceof Date)||isNaN(d)) return '';
+  return d.toISOString().split('T')[0];
+}
+function monday(d) {
+  const dt = new Date(d);
+  const diff = dt.getDate() - dt.getDay() + (dt.getDay()===0 ? -6 : 1);
+  return new Date(dt.setDate(diff));
+}
+const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fDate(s) {
+  if (!s) return '—';
+  const [y,m,d] = s.split('-');
+  if (!m) return s;
+  return `${MO[+m-1]} ${+d}, ${y}`;
+}
+function fMoney(n) {
+  return '$'+(+n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showErr(id,msg){ const e=document.getElementById(id); e.textContent=msg; e.style.display='block'; }
+function hideErr(id){ document.getElementById(id).style.display='none'; }
+
+// Check if a date string falls within a week's [s,e] range
+function inWeek(date, week) {
+  if (!date || !week || !week.s || !week.e) return false;
+  return date >= week.s && date <= week.e;
+}
+
+// Find which week index a date belongs to (-1 if none)
+function weekOfDate(date, weeks) {
+  for (let i=0; i<weeks.length; i++) {
+    if (inWeek(date, weeks[i])) return i;
+  }
+  return -1;
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+function init() {
+  hydrate();
+  if (!D.profile) {
+    document.getElementById('sStart').value = today();
+    document.getElementById('setupOverlay').style.display = 'flex';
+  } else {
+    startApp();
+  }
+}
+
+// ══════════════════════════════════════
+// SETUP
+// ══════════════════════════════════════
+function saveProfile() {
+  const name   = document.getElementById('sName').value.trim();
+  const hourly = parseFloat(document.getElementById('sHourly').value)  || 0;
+  const comm   = parseFloat(document.getElementById('sComm').value)    || 0;
+  const demo   = parseFloat(document.getElementById('sDemoPay').value) || 0;
+  const start  = document.getElementById('sStart').value;
+  if (!name)  { showErr('sErr','Please enter your name.');      return; }
+  if (!start) { showErr('sErr','Please select a start date.');  return; }
+  hideErr('sErr');
+  D.profile = { name, hourly, comm, demo, start };
+  const mon = monday(new Date());
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  D.weeks = [{ id:uid(), s:dStr(mon), e:dStr(sun), hrs:0, appts:[] }];
+  D.cur = 0;
+  persist();
+  document.getElementById('setupOverlay').style.display = 'none';
+  startApp();
+}
+
+// ══════════════════════════════════════
+// PROFILE EDIT
+// ══════════════════════════════════════
+function openProfileModal() {
+  const p = D.profile;
+  document.getElementById('eName').value    = p.name;
+  document.getElementById('eHourly').value  = p.hourly;
+  document.getElementById('eComm').value    = p.comm;
+  document.getElementById('eDemoPay').value = p.demo;
+  document.getElementById('eStart').value   = p.start;
+  document.getElementById('profileOverlay').style.display = 'flex';
+}
+function closeProfileModal(){ document.getElementById('profileOverlay').style.display='none'; }
+function saveProfileEdit() {
+  const name = document.getElementById('eName').value.trim();
+  if (!name) return;
+  D.profile.name   = name;
+  D.profile.hourly = parseFloat(document.getElementById('eHourly').value)  || 0;
+  D.profile.comm   = parseFloat(document.getElementById('eComm').value)    || 0;
+  D.profile.demo   = parseFloat(document.getElementById('eDemoPay').value) || 0;
+  D.profile.start  = document.getElementById('eStart').value;
+  persist();
+  closeProfileModal();
+  renderHeader();
+  renderPay();
+  renderAt();
+}
+
+// ══════════════════════════════════════
+// APP START
+// ══════════════════════════════════════
+function startApp() {
+  document.getElementById('appHeader').style.display='flex';
+  document.getElementById('appWrap').style.display='block';
+  renderHeader();
+  renderWeek();
+}
+function renderHeader() {
+  const p = D.profile;
+  document.getElementById('hName').innerHTML = `${esc(p.name)}'s Pay Tracker`;
+  document.getElementById('hMeta').textContent =
+    `Since ${fDate(p.start)}  ·  ${fMoney(p.hourly)}/hr  ·  ${p.comm}% commission  ·  ${fMoney(p.demo)}/demo`;
+}
+
+// ══════════════════════════════════════
+// WEEK NAVIGATION
+// ══════════════════════════════════════
+function renderWeek() {
+  const w = D.weeks[D.cur];
+  document.getElementById('prevBtn').disabled = D.cur <= 0;
+  document.getElementById('nextBtn').disabled = D.cur >= D.weeks.length-1;
+  document.getElementById('wkTitle').textContent = `Week ${D.cur+1} of ${D.weeks.length}`;
+  document.getElementById('wkDates').textContent = `${fDate(w.s)} – ${fDate(w.e)}`;
+  document.getElementById('wkStart').value = w.s  || '';
+  document.getElementById('wkEnd').value   = w.e  || '';
+  document.getElementById('wkHours').value = w.hrs || '';
+  renderAppts();
+  renderPay();
+  renderAt();
+}
+function prevWeek(){ if(D.cur>0){D.cur--;persist();renderWeek();} }
+function nextWeek(){ if(D.cur<D.weeks.length-1){D.cur++;persist();renderWeek();} }
+
+function addWeek() {
+  const last = D.weeks[D.weeks.length-1];
+  let s, e;
+  if (last && last.e) {
+    const d = new Date(last.e+'T00:00:00'); d.setDate(d.getDate()+1);
+    const end = new Date(d); end.setDate(d.getDate()+6);
+    s = dStr(d); e = dStr(end);
+  } else {
+    const mon = monday(new Date()); const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    s = dStr(mon); e = dStr(sun);
+  }
+  D.weeks.push({ id:uid(), s, e, hrs:0, appts:[] });
+  D.cur = D.weeks.length-1;
+  persist(); renderWeek();
+}
+function setWeek(field, val) {
+  D.weeks[D.cur][field] = val;
+  persist();
+  const w = D.weeks[D.cur];
+  document.getElementById('wkDates').textContent = `${fDate(w.s)} – ${fDate(w.e)}`;
+  renderAppts();
+  renderPay();
+  renderAt();
+}
+
+// ══════════════════════════════════════
+// APPOINTMENTS
+// ══════════════════════════════════════
+function renderAppts() {
+  const appts = D.weeks[D.cur].appts;
+  const area  = document.getElementById('apptArea');
+  if (!appts.length) {
+    area.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>
+      <div class="empty-text">No appointments logged this week.<br>Click <strong>+ Add Appointment</strong> to add one.</div></div>`;
+    return;
+  }
+
+  const rows = appts.map(a => {
+    const badge = outcomeBadge(a.outcome);
+    let contractCol = '<span style="color:var(--text2);">—</span>';
+    let statusTag   = '';
+    const isPending = !a.outcome || a.outcome === 'pending';
+
+    if (isPending) {
+      // No outcome yet — prompt to update
+      statusTag = `<span class="pay-tag" style="background:#fffbeb;color:#b45309;border:1px dashed #f59e0b;">Tap ✏️ to set outcome after appointment</span>`;
+    } else if (a.outcome === 'sale') {
+      contractCol = `<div style="font-family:'DM Mono',monospace;font-weight:600;">${fMoney(parseFloat(a.contract)||0)}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">Job: ${fDate(a.jobStart)}${a.jobEnd?' → '+fDate(a.jobEnd):' → <em style="color:var(--blue)">In progress</em>'}`;
+      contractCol += '</div>';
+
+      if (a.jobEnd) {
+        const completedInWeek = weekOfDate(a.jobEnd, D.weeks);
+        const paidInWeek      = completedInWeek + 1;
+        if (completedInWeek === D.cur - 1) {
+          statusTag = `<span class="pay-tag pay-tag-paid">✅ Commission paid this week</span>`;
+        } else if (completedInWeek === D.cur) {
+          statusTag = `<span class="pay-tag pay-tag-queued">➡️ Commission paid next week (Week ${paidInWeek+1})</span>`;
+        } else if (completedInWeek < D.cur - 1 && completedInWeek >= 0) {
+          statusTag = `<span class="pay-tag pay-tag-prev">✓ Commission paid in Week ${paidInWeek+1}</span>`;
+        } else if (completedInWeek === -1) {
+          statusTag = `<span class="pay-tag pay-tag-queued">➡️ Commission queued (job complete)</span>`;
+        } else {
+          statusTag = `<span class="pay-tag pay-tag-queued">➡️ Commission paid in Week ${paidInWeek+1}</span>`;
+        }
+      } else {
+        statusTag = `<span class="pay-tag pay-tag-pending">⏳ Pending — job not yet complete</span>`;
+      }
+    } else if (a.outcome === 'demo' || a.outcome === 'canceled') {
+      if (D.cur < D.weeks.length - 1) {
+        statusTag = `<span class="pay-tag pay-tag-queued">➡️ Demo pay in Week ${D.cur+2}</span>`;
+      } else {
+        statusTag = `<span class="pay-tag pay-tag-queued">➡️ Demo pay next week</span>`;
+      }
+    }
+
+    const rowStyle = isPending ? 'background:#fffdf5;' : '';
+
+    return `<tr style="${rowStyle}">
+      <td>
+        <div style="font-weight:600;">${esc(a.cust)}</div>
+        ${statusTag ? `<div style="margin-top:4px;">${statusTag}</div>` : ''}
+      </td>
+      <td style="white-space:nowrap;">${fDate(a.date)}</td>
+      <td>${badge}</td>
+      <td>${contractCol}</td>
+      <td style="text-align:right;white-space:nowrap;" class="no-print">
+        <button class="btn btn-outline btn-icon btn-sm" onclick="editAppt('${a.id}')" title="Edit">✏️</button>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="delAppt('${a.id}')" title="Delete">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  area.innerHTML = `<div style="overflow-x:auto;">
+    <table class="appt-table">
+      <thead><tr>
+        <th>Customer / Payment Status</th>
+        <th>Apt. Date</th>
+        <th>Outcome</th>
+        <th>Contract / Job Dates</th>
+        <th class="no-print"></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function outcomeBadge(o) {
+  return ({
+    pending:  '<span class="badge badge-awaiting">⏳ Awaiting Outcome</span>',
+    sale:     '<span class="badge badge-sale">✔ Sale</span>',
+    demo:     '<span class="badge badge-demo">Demo</span>',
+    no_sale:  '<span class="badge badge-nosale">No Sale / No Demo</span>',
+    canceled: '<span class="badge badge-canceled">Canceled → Demo</span>'
+  })[o] || '<span class="badge badge-awaiting">⏳ Awaiting Outcome</span>';
+}
+
+// Appointment Modal
+function openApptModal(editId) {
+  document.getElementById('apptTitle').textContent = editId ? 'Edit Appointment' : 'Add Appointment';
+  document.getElementById('aEditId').value = editId || '';
+  if (!editId) {
+    document.getElementById('aCust').value     = '';
+    document.getElementById('aDate').value     = today();
+    document.getElementById('aOutcome').value  = 'pending';
+    document.getElementById('aContract').value = '';
+    document.getElementById('aJobStart').value = '';
+    document.getElementById('aJobEnd').value   = '';
+  }
+  outcomeChanged();
+  hideErr('aErr');
+  document.getElementById('apptOverlay').style.display='flex';
+}
+function closeApptModal(){ document.getElementById('apptOverlay').style.display='none'; }
+
+function outcomeChanged() {
+  const v = document.getElementById('aOutcome').value;
+  document.getElementById('saleFields').style.display    = v==='sale'     ? 'block':'none';
+  document.getElementById('canceledNote').style.display  = v==='canceled' ? 'block':'none';
+  document.getElementById('demoNote').style.display      = v==='demo'     ? 'block':'none';
+}
+
+function editAppt(id) {
+  const a = D.weeks[D.cur].appts.find(x=>x.id===id);
+  if (!a) return;
+  document.getElementById('aCust').value     = a.cust;
+  document.getElementById('aDate').value     = a.date;
+  document.getElementById('aOutcome').value  = a.outcome;
+  document.getElementById('aContract').value = a.contract || '';
+  document.getElementById('aJobStart').value = a.jobStart || '';
+  document.getElementById('aJobEnd').value   = a.jobEnd   || '';
+  outcomeChanged();
+  openApptModal(id);
+}
+
+function delAppt(id) {
+  if (!confirm('Delete this appointment?')) return;
+  D.weeks[D.cur].appts = D.weeks[D.cur].appts.filter(x=>x.id!==id);
+  persist(); renderAppts(); renderPay(); renderAt();
+}
+
+function saveAppt() {
+  const cust    = document.getElementById('aCust').value.trim();
+  const date    = document.getElementById('aDate').value;
+  const outcome = document.getElementById('aOutcome').value || 'pending';
+  const contract= parseFloat(document.getElementById('aContract').value)||0;
+  const jobStart= document.getElementById('aJobStart').value;
+  const jobEnd  = document.getElementById('aJobEnd').value;
+  const editId  = document.getElementById('aEditId').value;
+  if (!cust)    { showErr('aErr','Please enter a customer name.'); return; }
+  hideErr('aErr');
+  const rec = { id:editId||uid(), cust, date, outcome, contract, jobStart, jobEnd };
+  const week = D.weeks[D.cur];
+  if (editId) { const i=week.appts.findIndex(x=>x.id===editId); if(i>-1) week.appts[i]=rec; }
+  else        { week.appts.push(rec); }
+  persist(); closeApptModal(); renderAppts(); renderPay(); renderAt();
+}
+
+// ══════════════════════════════════════
+// PAY CALCULATIONS
+// ══════════════════════════════════════
+/*
+  Payment timing rules:
+  - Base pay:   earned and paid in current week (hours × rate)
+  - Demo pay:   earned last week, paid THIS week
+                → count demos in weeks[cur-1].appts
+  - Commission: earned when job completes; paid the week AFTER the job completion week
+                → find sales whose jobEnd falls within weeks[cur-1] date range
+  - Queued:     jobs that completed THIS week → commission comes NEXT week
+  - Pending:    jobs with no completion date → future unknown week
+*/
+function calcWeek(idx) {
+  const p       = D.profile;
+  const curWeek = D.weeks[idx];
+  const prevWeek= idx > 0 ? D.weeks[idx-1] : null;
+
+  // BASE: hours this week
+  const base = (p.hourly||0) * (parseFloat(curWeek.hrs)||0);
+
+  // DEMOS: from previous week
+  let demoCount=0, demoNames=[];
+  if (prevWeek) {
+    for (const a of (prevWeek.appts||[])) {
+      if (a.outcome==='demo'||a.outcome==='canceled') { demoCount++; demoNames.push(a.cust); }
+    }
+  }
+  const demoPay = demoCount * (p.demo||0);
+
+  // COMMISSION PAID: sales whose jobEnd falls in previous week
+  let commPaid=0, salesPaid=0;
+  if (prevWeek) {
+    for (const w of D.weeks) {
+      for (const a of (w.appts||[])) {
+        if (a.outcome==='sale' && a.jobEnd && inWeek(a.jobEnd, prevWeek)) {
+          commPaid += (parseFloat(a.contract)||0) * ((p.comm||0)/100);
+          salesPaid++;
+        }
+      }
+    }
+  }
+
+  // QUEUED: jobs that completed THIS week (paid next week)
+  let commQueued=0, salesQueued=0;
+  for (const w of D.weeks) {
+    for (const a of (w.appts||[])) {
+      if (a.outcome==='sale' && a.jobEnd && inWeek(a.jobEnd, curWeek)) {
+        commQueued += (parseFloat(a.contract)||0) * ((p.comm||0)/100);
+        salesQueued++;
+      }
+    }
+  }
+
+  // PENDING: no completion date
+  let commPending=0, salesPending=0;
+  for (const w of D.weeks) {
+    for (const a of (w.appts||[])) {
+      if (a.outcome==='sale' && !a.jobEnd) {
+        commPending += (parseFloat(a.contract)||0) * ((p.comm||0)/100);
+        salesPending++;
+      }
+    }
+  }
+
+  const total = base + demoPay + commPaid;
+  return { base, demoPay, demoCount, demoNames, commPaid, salesPaid, commQueued, salesQueued, commPending, salesPending, total };
+}
+
+function renderPay() {
+  const { base, demoPay, demoCount, demoNames, commPaid, salesPaid,
+          commQueued, salesQueued, commPending, salesPending, total } = calcWeek(D.cur);
+  const p = D.profile;
+  const isFirstWeek = D.cur === 0;
+
+  let html = '';
+
+  // Week 1 notice
+  if (isFirstWeek) {
+    html += `<div class="first-week-notice">
+      <strong>Week 1:</strong> Only base pay is included this week. Demo pay and commission start appearing from <strong>Week 2</strong> onward — earned last week, paid this week.
+    </div>`;
+  }
+
+  // Base pay block
+  html += `<div class="pay-block block-base">
+    <div class="pay-block-head">
+      <div class="pay-block-label">🕐 Base Pay — This Week</div>
+      <div class="pay-block-amount">${fMoney(base)}</div>
+    </div>
+    <div class="pay-block-detail">
+      ${parseFloat(D.weeks[D.cur].hrs)||0} hours worked × ${fMoney(p.hourly)}/hr
+    </div>
+  </div>`;
+
+  // Demo pay block
+  html += `<div class="pay-block block-demo">
+    <div class="pay-block-head">
+      <div class="pay-block-label">🟡 Demo Pay — From Last Week</div>
+      <div class="pay-block-amount">${fMoney(demoPay)}</div>
+    </div>
+    <div class="pay-block-detail">
+      ${demoCount > 0
+        ? `${demoCount} demo(s) × ${fMoney(p.demo)}/demo${demoNames.length ? ' &nbsp;·&nbsp; ' + demoNames.map(n=>'<span>'+esc(n)+'</span>').join(', ') : ''}`
+        : isFirstWeek ? 'No previous week to pull demos from' : 'No demos were recorded last week'
+      }
+    </div>
+  </div>`;
+
+  // Commission paid block
+  html += `<div class="pay-block block-comm">
+    <div class="pay-block-head">
+      <div class="pay-block-label">✅ Commission — From Last Week's Completions</div>
+      <div class="pay-block-amount">${fMoney(commPaid)}</div>
+    </div>
+    <div class="pay-block-detail">
+      ${salesPaid > 0
+        ? `${salesPaid} job(s) completed last week × ${p.comm}% of contract`
+        : isFirstWeek ? 'No previous week to pull completions from' : 'No jobs completed last week'
+      }
+    </div>
+  </div>`;
+
+  // Queued notice (job completed this week → paid next week)
+  if (commQueued > 0) {
+    html += `<div class="notice notice-queued">
+      <div class="notice-left">
+        <div class="notice-icon">➡️</div>
+        <div>
+          <div class="notice-title">Queued for Next Week</div>
+          <div class="notice-sub">${salesQueued} job(s) completed this week — commission paid in Week ${D.cur+2}</div>
+        </div>
+      </div>
+      <div class="notice-amt">${fMoney(commQueued)}</div>
+    </div>`;
+  }
+
+  // Pending notice (no completion date)
+  if (commPending > 0) {
+    html += `<div class="notice notice-pending">
+      <div class="notice-left">
+        <div class="notice-icon">⏳</div>
+        <div>
+          <div class="notice-title">Commission Pending</div>
+          <div class="notice-sub">${salesPending} job(s) not yet completed — paid the week after each job finishes</div>
+        </div>
+      </div>
+      <div class="notice-amt">${fMoney(commPending)}</div>
+    </div>`;
+  }
+
+  // Total
+  const parts = [];
+  if (base > 0)     parts.push(`${fMoney(base)} base`);
+  if (demoPay > 0)  parts.push(`${fMoney(demoPay)} demos`);
+  if (commPaid > 0) parts.push(`${fMoney(commPaid)} commission`);
+
+  html += `<div class="total-bar">
+    <div>
+      <div class="total-label">Total Pay — Week ${D.cur+1}</div>
+      <div class="total-breakdown">${parts.length ? parts.join(' + ') : 'Nothing calculated yet'}</div>
+    </div>
+    <div class="total-amount">${fMoney(total)}</div>
+  </div>`;
+
+  document.getElementById('payBlocks').innerHTML = html;
+}
+
+// ══════════════════════════════════════
+// ALL-TIME TOTALS
+// ══════════════════════════════════════
+function toggleAt() {
+  atOpen = !atOpen;
+  document.getElementById('atBody').style.display = atOpen ? 'block' : 'none';
+  document.getElementById('atToggle').classList.toggle('open', atOpen);
+  document.getElementById('atChev').textContent = atOpen ? '▲' : '▼';
+  if (atOpen) renderAt(true);
+}
+
+function renderAt(force) {
+  if (!atOpen && !force) return;
+  const p = D.profile;
+  let tBase=0, tDemo=0, tComm=0, tPending=0, tHrs=0, tDemos=0, tSales=0, tContract=0;
+
+  for (let i=0; i<D.weeks.length; i++) {
+    const { base, demoPay, demoCount, commPaid, commPending, salesPaid } = calcWeek(i);
+    tBase    += base;
+    tDemo    += demoPay;
+    tComm    += commPaid;
+    tPending += commPending;
+    tHrs     += parseFloat(D.weeks[i].hrs)||0;
+    tDemos   += demoCount;
+    tSales   += salesPaid;
+  }
+  // Avoid double-counting pending — just calculate once
+  let pendingOnce=0;
+  for (const w of D.weeks) {
+    for (const a of (w.appts||[])) {
+      if (a.outcome==='sale'&&!a.jobEnd) pendingOnce += (parseFloat(a.contract)||0)*((p.comm||0)/100);
+    }
+  }
+
+  const grand = tBase + tDemo + tComm;
+
+  document.getElementById('atBody').innerHTML = `<div class="at-grid">
+    <div class="at-item" style="background:var(--navy);border-color:var(--navy);">
+      <div class="at-val" style="color:#fff;">${fMoney(grand)}</div>
+      <div class="at-lbl" style="color:#94a3b8;">Grand Total Paid</div>
+    </div>
+    <div class="at-item">
+      <div class="at-val">${fMoney(tBase)}</div>
+      <div class="at-lbl">Total Base Pay</div>
+    </div>
+    <div class="at-item" style="border-color:#bbf7d0;">
+      <div class="at-val" style="color:var(--green);">${fMoney(tComm)}</div>
+      <div class="at-lbl">Commission Paid</div>
+    </div>
+    <div class="at-item" style="border-color:#fde68a;">
+      <div class="at-val" style="color:var(--amber);">${fMoney(tDemo)}</div>
+      <div class="at-lbl">Demo Pay Paid</div>
+    </div>
+    <div class="at-item" style="border-color:#bfdbfe;">
+      <div class="at-val" style="color:var(--blue);">${fMoney(pendingOnce)}</div>
+      <div class="at-lbl">Commission Pending</div>
+    </div>
+    <div class="at-item">
+      <div class="at-val">${tHrs%1===0?tHrs:tHrs.toFixed(1)}</div>
+      <div class="at-lbl">Total Hours</div>
+    </div>
+    <div class="at-item">
+      <div class="at-val">${tSales}</div>
+      <div class="at-lbl">Jobs Completed</div>
+    </div>
+    <div class="at-item">
+      <div class="at-val">${tDemos}</div>
+      <div class="at-lbl">Demos Paid Out</div>
+    </div>
+    <div class="at-item">
+      <div class="at-val">${D.weeks.length}</div>
+      <div class="at-lbl">Weeks Tracked</div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+// PRINT
+// ══════════════════════════════════════
+function doPrint() {
+  const p   = D.profile;
+  const idx = D.cur;
+  const w   = D.weeks[idx];
+  const { base, demoPay, demoCount, commPaid, salesPaid, commQueued, salesQueued, commPending, salesPending, total } = calcWeek(idx);
+  const logoSrc = document.querySelector('.header img').src;
+  const printDate = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  // Build appointments rows
+  const appts = w.appts || [];
+  let apptRows = '';
+  if (appts.length === 0) {
+    apptRows = `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:16px;">No appointments logged this week</td></tr>`;
+  } else {
+    appts.forEach(a => {
+      const outcomeLabel = { sale:'Sale', demo:'Demo', no_sale:'No Sale / No Demo', canceled:'Canceled → Demo', pending:'Awaiting Outcome' }[a.outcome] || '—';
+      const outcomeColor = { sale:'#16a34a', demo:'#d97706', no_sale:'#6b7280', canceled:'#b91c1c', pending:'#b45309' }[a.outcome] || '#6b7280';
+      const contractAmt  = a.outcome === 'sale' ? fMoney(parseFloat(a.contract)||0) : '—';
+      let payStatus = '';
+      if (a.outcome === 'sale') {
+        if (a.jobEnd) {
+          const ciw = weekOfDate(a.jobEnd, D.weeks);
+          if      (ciw === idx - 1)               payStatus = 'Paid this week';
+          else if (ciw === idx)                   payStatus = 'Paid next week';
+          else if (ciw >= 0 && ciw < idx - 1)     payStatus = `Paid in Week ${ciw+2}`;
+          else                                    payStatus = 'Queued';
+        } else { payStatus = 'Pending completion'; }
+      } else if (a.outcome === 'demo' || a.outcome === 'canceled') {
+        payStatus = 'Demo pay next week';
+      } else if (a.outcome === 'pending') {
+        payStatus = 'Outcome not set';
+      }
+      apptRows += `<tr>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e0df;">${esc(a.cust)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e0df;white-space:nowrap;">${fDate(a.date)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e0df;"><span style="color:${outcomeColor};font-weight:600;">${outcomeLabel}</span></td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e0df;font-family:'DM Mono',monospace;">${contractAmt}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e0df;color:#6b7280;font-size:11px;">${payStatus}</td>
+      </tr>`;
+    });
+  }
+
+  // All-time totals
+  let tBase=0,tDemo=0,tComm=0,tHrs=0,tSalesCount=0,tDemosCount=0; let pendingOnce=0;
+  for (let i=0;i<D.weeks.length;i++) {
+    const c=calcWeek(i);
+    tBase+=c.base; tDemo+=c.demoPay; tComm+=c.commPaid;
+    tHrs+=parseFloat(D.weeks[i].hrs)||0; tSalesCount+=c.salesPaid; tDemosCount+=c.demoCount;
+  }
+  for (const wk of D.weeks) for (const a of (wk.appts||[])) {
+    if (a.outcome==='sale'&&!a.jobEnd) pendingOnce+=(parseFloat(a.contract)||0)*((p.comm||0)/100);
+  }
+  const grandTotal = tBase+tDemo+tComm;
+
+  const html = `
+  <div style="max-width:720px;margin:0 auto;padding:32px 32px 48px;background:#fff;">
+
+    <!-- HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:3px solid #8e3d39;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <img src="${logoSrc}" style="height:64px;width:auto;" alt="Alta California Construction">
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#8e3d39;">Alta California Construction</div>
+          <div style="font-size:22px;font-weight:700;color:#1e1b1b;margin-top:2px;">Canvasser Pay Report</div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;">Printed</div>
+        <div style="font-size:13px;font-weight:600;color:#1e1b1b;">${printDate}</div>
+      </div>
+    </div>
+
+    <!-- CANVASSER INFO -->
+    <div style="background:#f9f7f7;border:1.5px solid #e5e0df;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;gap:32px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280;">Canvasser</div>
+        <div style="font-size:18px;font-weight:700;color:#1e1b1b;margin-top:2px;">${esc(p.name)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280;">Program Start</div>
+        <div style="font-size:14px;font-weight:600;color:#1e1b1b;margin-top:2px;">${fDate(p.start)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280;">Hourly Rate</div>
+        <div style="font-size:14px;font-weight:600;color:#1e1b1b;margin-top:2px;">${fMoney(p.hourly)}/hr</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280;">Commission</div>
+        <div style="font-size:14px;font-weight:600;color:#1e1b1b;margin-top:2px;">${p.comm}%</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280;">Demo Pay</div>
+        <div style="font-size:14px;font-weight:600;color:#1e1b1b;margin-top:2px;">${fMoney(p.demo)}/demo</div>
+      </div>
+    </div>
+
+    <!-- WEEK BANNER -->
+    <div style="background:#8e3d39;border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.65);">Pay Period</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;margin-top:2px;">Week ${idx+1} &nbsp;·&nbsp; ${fDate(w.s)} – ${fDate(w.e)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.65);">Hours Worked</div>
+        <div style="font-size:20px;font-weight:700;color:#fff;margin-top:2px;">${parseFloat(w.hrs)||0} hrs</div>
+      </div>
+    </div>
+
+    <!-- APPOINTMENTS TABLE -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#8e3d39;margin-bottom:10px;">Appointments (${appts.length})</div>
+      <table style="width:100%;border-collapse:collapse;border:1.5px solid #e5e0df;border-radius:8px;overflow:hidden;">
+        <thead>
+          <tr style="background:#f9f7f7;">
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;border-bottom:1.5px solid #e5e0df;">Customer</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;border-bottom:1.5px solid #e5e0df;">Apt. Date</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;border-bottom:1.5px solid #e5e0df;">Outcome</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;border-bottom:1.5px solid #e5e0df;">Contract</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;border-bottom:1.5px solid #e5e0df;">Pay Status</th>
+          </tr>
+        </thead>
+        <tbody>${apptRows}</tbody>
+      </table>
+    </div>
+
+    <!-- PAY BREAKDOWN -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#8e3d39;margin-bottom:10px;">Pay Breakdown — Week ${idx+1}</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <tbody>
+          <tr>
+            <td style="padding:9px 14px;background:#f9f7f7;border:1.5px solid #e5e0df;border-radius:6px 6px 0 0;font-weight:600;">🕐 Base Pay</td>
+            <td style="padding:9px 14px;background:#f9f7f7;border:1.5px solid #e5e0df;border-top:none;text-align:right;font-family:'DM Mono',monospace;font-size:15px;font-weight:600;">${fMoney(base)}</td>
+            <td style="padding:9px 14px;background:#f9f7f7;border:1.5px solid #e5e0df;border-top:none;color:#6b7280;font-size:11px;">${parseFloat(w.hrs)||0} hrs × ${fMoney(p.hourly)}/hr</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;background:#fffbeb;border:1.5px solid #fde68a;border-top:none;font-weight:600;color:#d97706;">🟡 Demo Pay (from last week)</td>
+            <td style="padding:9px 14px;background:#fffbeb;border:1.5px solid #fde68a;border-top:none;text-align:right;font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:#d97706;">${fMoney(demoPay)}</td>
+            <td style="padding:9px 14px;background:#fffbeb;border:1.5px solid #fde68a;border-top:none;color:#6b7280;font-size:11px;">${demoCount} demo(s) × ${fMoney(p.demo)}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;background:#f0faf5;border:1.5px solid #bbf7d0;border-top:none;font-weight:600;color:#16a34a;">✅ Commission (from last week's completions)</td>
+            <td style="padding:9px 14px;background:#f0faf5;border:1.5px solid #bbf7d0;border-top:none;text-align:right;font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:#16a34a;">${fMoney(commPaid)}</td>
+            <td style="padding:9px 14px;background:#f0faf5;border:1.5px solid #bbf7d0;border-top:none;color:#6b7280;font-size:11px;">${salesPaid} job(s) completed last week · ${p.comm}%</td>
+          </tr>
+          ${commQueued > 0 ? `<tr>
+            <td style="padding:9px 14px;background:#f5f2ff;border:1.5px solid #c4b5fd;border-top:none;font-weight:600;color:#7c3aed;">➡️ Queued for Next Week</td>
+            <td style="padding:9px 14px;background:#f5f2ff;border:1.5px solid #c4b5fd;border-top:none;text-align:right;font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:#7c3aed;">${fMoney(commQueued)}</td>
+            <td style="padding:9px 14px;background:#f5f2ff;border:1.5px solid #c4b5fd;border-top:none;color:#6b7280;font-size:11px;">${salesQueued} job(s) completed this week</td>
+          </tr>` : ''}
+          ${commPending > 0 ? `<tr>
+            <td style="padding:9px 14px;background:#eff4ff;border:1.5px solid #bfdbfe;border-top:none;font-weight:600;color:#1d4ed8;">⏳ Commission Pending</td>
+            <td style="padding:9px 14px;background:#eff4ff;border:1.5px solid #bfdbfe;border-top:none;text-align:right;font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:#1d4ed8;">${fMoney(commPending)}</td>
+            <td style="padding:9px 14px;background:#eff4ff;border:1.5px solid #bfdbfe;border-top:none;color:#6b7280;font-size:11px;">${salesPending} job(s) not yet complete</td>
+          </tr>` : ''}
+        </tbody>
+      </table>
+      <!-- TOTAL -->
+      <div style="background:#1e1b1b;border-radius:0 0 8px 8px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;margin-top:-1px;">
+        <div style="font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Total Pay — Week ${idx+1}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:30px;font-weight:700;color:#fff;">${fMoney(total)}</div>
+      </div>
+    </div>
+
+    <!-- ALL-TIME SUMMARY -->
+    <div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#8e3d39;margin-bottom:10px;">All-Time Summary (${D.weeks.length} Week${D.weeks.length===1?'':'s'})</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <div style="background:#1e1b1b;border-radius:8px;padding:12px 14px;text-align:center;grid-column:span 2;">
+          <div style="font-family:'DM Mono',monospace;font-size:24px;font-weight:700;color:#fff;">${fMoney(grandTotal)}</div>
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Grand Total Paid</div>
+        </div>
+        <div style="background:#f9f7f7;border:1.5px solid #e5e0df;border-radius:8px;padding:12px 14px;text-align:center;">
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:#1e1b1b;">${fMoney(tBase)}</div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Base Pay</div>
+        </div>
+        <div style="background:#f0faf5;border:1.5px solid #bbf7d0;border-radius:8px;padding:12px 14px;text-align:center;">
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:#16a34a;">${fMoney(tComm)}</div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Commission</div>
+        </div>
+        <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:12px 14px;text-align:center;">
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:#d97706;">${fMoney(tDemo)}</div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Demo Pay</div>
+        </div>
+        ${pendingOnce > 0 ? `<div style="background:#eff4ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:12px 14px;text-align:center;">
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:#1d4ed8;">${fMoney(pendingOnce)}</div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Pending</div>
+        </div>` : ''}
+        <div style="background:#f9f7f7;border:1.5px solid #e5e0df;border-radius:8px;padding:12px 14px;text-align:center;">
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:#1e1b1b;">${tHrs%1===0?tHrs:tHrs.toFixed(1)}</div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Total Hours</div>
+        </div>
+        <div style="background:#f9f7f7;border:1.5px solid #e5e0df;border-radius:8px;padding:12px 14px;text-align:center;">
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:#1e1b1b;">${tSalesCount}</div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Sales Completed</div>
+        </div>
+        <div style="background:#f9f7f7;border:1.5px solid #e5e0df;border-radius:8px;padding:12px 14px;text-align:center;">
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:#1e1b1b;">${tDemosCount}</div>
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Total Demos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="margin-top:32px;padding-top:14px;border-top:1px solid #e5e0df;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:10px;color:#9ca3af;">Alta California Construction · Canvasser Pay Tracker</div>
+      <div style="font-size:10px;color:#9ca3af;">Week ${idx+1} of ${D.weeks.length} · Generated ${printDate}</div>
+    </div>
+
+  </div>`;
+
+  document.getElementById('printPage').innerHTML = html;
+  document.getElementById('printPage').style.display = 'block';
+  window.print();
+  document.getElementById('printPage').style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>
