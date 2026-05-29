@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -99,6 +100,52 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .appt-table tr:last-child td { border-bottom: none; }
 .appt-table tbody tr:hover td { background: #fafbfc; }
 
+/* TAB NAV */
+.tab-nav { display:flex; gap:4px; background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:5px; margin-bottom:16px; box-shadow:var(--shadow); }
+.tab-btn { flex:1; padding:10px 16px; border:none; border-radius:8px; background:transparent; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+.tab-btn.active { background:var(--navy); color:#fff; }
+.tab-btn:not(.active):hover { background:var(--gray-lt); color:var(--text); }
+
+/* LEDGER */
+.ledger-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:16px; border-bottom:1.5px solid var(--border); }
+.ledger-sum-item { text-align:center; padding:14px 10px; border-radius:10px; }
+.ledger-sum-val  { font-family:'DM Mono',monospace; font-size:22px; font-weight:700; line-height:1; }
+.ledger-sum-lbl  { font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text2); margin-top:4px; }
+.ledger-sum-earned  { background:var(--gray-lt); border:1.5px solid var(--border); }
+.ledger-sum-paid    { background:var(--green-lt); border:1.5px solid #bbf7d0; }
+.ledger-sum-paid .ledger-sum-val { color:var(--green); }
+.ledger-sum-balance { background:var(--amber-lt); border:1.5px solid #fde68a; }
+.ledger-sum-balance .ledger-sum-val { color:var(--amber); }
+.ledger-table { width:100%; border-collapse:collapse; }
+.ledger-table th { padding:8px 14px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text2); background:var(--gray-lt); border-bottom:1.5px solid var(--border); }
+.ledger-table td { padding:12px 14px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+.ledger-table tr:last-child td { border-bottom:none; }
+.ledger-table tbody tr:hover td { background:#fafbfc; }
+.type-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
+.type-base { background:var(--gray-lt); color:var(--gray); border:1px solid var(--border); }
+.type-demo { background:var(--amber-lt); color:var(--amber); }
+.type-comm { background:var(--green-lt); color:var(--green); }
+.paid-toggle { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:20px; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; transition:all 0.15s; white-space:nowrap; }
+.paid-toggle.unpaid { background:var(--gray-lt); color:var(--gray); border:1.5px solid var(--border); }
+.paid-toggle.unpaid:hover { background:#f0fdf4; color:var(--green); border-color:#bbf7d0; }
+.paid-toggle.paid   { background:var(--green-lt); color:var(--green); border:1.5px solid #bbf7d0; }
+.ledger-card { border-bottom:1px solid var(--border); padding:14px 16px; }
+.ledger-card:last-child { border-bottom:none; }
+.ledger-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px; }
+.ledger-card-desc { font-weight:600; font-size:14px; }
+.ledger-card-sub  { font-size:12px; color:var(--text2); margin-top:2px; }
+@media (max-width:480px) {
+  .ledger-summary { grid-template-columns:1fr 1fr; gap:8px; padding:12px; }
+  .ledger-sum-val { font-size:18px; }
+  .tab-btn { font-size:12px; padding:8px 6px; }
+  .ledger-desktop { display:none !important; }
+  .ledger-mobile  { display:block !important; }
+}
+@media (min-width:481px) {
+  .ledger-desktop { display:block !important; }
+  .ledger-mobile  { display:none !important; }
+}
+
 /* BADGES */
 .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
 .badge-sale     { background: var(--green-lt);  color: var(--green);  }
@@ -191,7 +238,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 /* PRINT */
 @media print {
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  body, .header, .wrap, .card, .week-nav, .overlay, #appWrap { display: none !important; }
+  /* Hide all screen UI */
+  .header, #appWrap, #setupOverlay, #apptOverlay, #profileOverlay, .week-nav, .no-print { display: none !important; }
+  /* Show only the print page */
   #printPage {
     display: block !important;
     font-family: 'DM Sans', sans-serif;
@@ -516,8 +565,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     </div>
   </div>
   <div class="hacts">
+    <button class="btn btn-ghost btn-sm" onclick="backupData()">💾 Backup</button>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('restoreInput').click()">📂 Restore</button>
+    <input type="file" id="restoreInput" accept=".json" style="display:none;" onchange="restoreData(event)">
     <button class="btn btn-ghost btn-sm" onclick="openProfileModal()">✏️ Edit Profile</button>
-    <button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨️ Print / Export</button>
+    <button class="btn btn-ghost btn-sm" onclick="doPrint()">🖨️ Print</button>
   </div>
 </div>
 
@@ -529,6 +581,15 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
   <!-- EARNINGS DASHBOARD -->
   <div id="earningsDash" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"></div>
+
+  <!-- Tab Nav -->
+  <div class="tab-nav no-print" id="tabNav">
+    <button class="tab-btn active" id="tab-tracker" onclick="switchTab('tracker')">📋 Tracker</button>
+    <button class="tab-btn" id="tab-ledger"  onclick="switchTab('ledger')">💵 Payment Record</button>
+  </div>
+
+  <!-- TRACKER VIEW -->
+  <div id="view-tracker">
 
   <!-- Week Nav -->
   <div class="week-nav no-print">
@@ -549,7 +610,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       <div class="card-head-title">📅 Week Details</div>
     </div>
     <div class="card-body">
-      <div class="row3">
+      <div class="row2" style="margin-bottom:14px;">
         <div class="field" style="margin-bottom:0;">
           <label class="label">Week Start Date</label>
           <input type="date" class="input" id="wkStart" onchange="setWeek('s',this.value)">
@@ -558,10 +619,19 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <label class="label">Week End Date</label>
           <input type="date" class="input" id="wkEnd" onchange="setWeek('e',this.value)">
         </div>
-        <div class="field" style="margin-bottom:0;">
-          <label class="label">Hours Worked</label>
-          <input type="number" class="input" id="wkHours" placeholder="40" step="0.5" min="0"
+      </div>
+      <!-- Hours — highlighted -->
+      <div style="background:var(--navy);border-radius:10px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:140px;">
+          <label class="label" style="color:#94a3b8;margin-bottom:6px;">Hours Worked This Week</label>
+          <input type="number" class="input" id="wkHours" placeholder="0" step="0.5" min="0"
+            style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff;font-size:22px;font-weight:700;height:52px;"
             oninput="setWeek('hrs',parseFloat(this.value)||0)">
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#94a3b8;margin-bottom:4px;">Base Pay This Week</div>
+          <div id="basePayPreview" style="font-family:'DM Mono',monospace;font-size:32px;font-weight:700;color:#fff;line-height:1;">$0.00</div>
+          <div id="basePay​Calc" style="font-size:11px;color:#64748b;margin-top:3px;"></div>
         </div>
       </div>
     </div>
@@ -608,6 +678,7 @@ function hydrate() {
   try { const r = localStorage.getItem(KEY); if (r) D = JSON.parse(r); } catch(e){}
   if (!Array.isArray(D.weeks)) D.weeks = [];
   if (typeof D.cur !== 'number') D.cur = 0;
+  if (!D.paidItems) D.paidItems = {};
 }
 
 // ══════════════════════════════════════
@@ -746,6 +817,7 @@ function renderWeek() {
   document.getElementById('wkStart').value = w.s  || '';
   document.getElementById('wkEnd').value   = w.e  || '';
   document.getElementById('wkHours').value = w.hrs || '';
+  updateBasePayPreview();
   renderAppts();
   renderPay();
   renderAt();
@@ -773,9 +845,21 @@ function setWeek(field, val) {
   persist();
   const w = D.weeks[D.cur];
   document.getElementById('wkDates').textContent = `${fDate(w.s)} – ${fDate(w.e)}`;
+  updateBasePayPreview();
   renderAppts();
   renderPay();
   renderAt();
+}
+
+function updateBasePayPreview() {
+  const w   = D.weeks[D.cur];
+  const p   = D.profile;
+  const hrs = parseFloat(w.hrs) || 0;
+  const pay = hrs * (p.hourly||0);
+  const el  = document.getElementById('basePayPreview');
+  const el2 = document.getElementById('basePay​Calc');
+  if (el)  el.textContent  = fMoney(pay);
+  if (el2) el2.textContent = `${hrs} hrs × ${fMoney(p.hourly)}/hr`;
 }
 
 // ══════════════════════════════════════
@@ -909,14 +993,14 @@ function renderAppts() {
       const amt = (parseFloat(a.contract)||0) * ((D.profile.comm||0)/100);
       const ciw = weekOfDate(a.jobEnd, D.weeks);
       payAmt = fMoney(amt);
-      payLbl = ciw === D.cur-1 ? 'Paid this week' : `Paid Wk ${ciw+2}`;
+      payLbl = ciw === D.cur ? 'Paid this week' : `Paid Wk ${ciw+1}`;
     } else if (isSale && !a.jobEnd) {
       const amt = (parseFloat(a.contract)||0) * ((D.profile.comm||0)/100);
       payAmt = fMoney(amt);
       payLbl = 'Pending completion';
     } else if (a.outcome === 'demo' || a.outcome === 'canceled') {
       payAmt = fMoney(D.profile.demo);
-      payLbl = 'Paid next week';
+      payLbl = 'Paid this week';
     } else if (isPending) {
       payAmt = 'TBD';
       payLbl = 'Set outcome first';
@@ -1056,45 +1140,29 @@ function saveAppt() {
 function calcWeek(idx) {
   const p       = D.profile;
   const curWeek = D.weeks[idx];
-  const prevWeek= idx > 0 ? D.weeks[idx-1] : null;
 
-  // BASE: hours this week
+  // BASE: hours this week × rate
   const base = (p.hourly||0) * (parseFloat(curWeek.hrs)||0);
 
-  // DEMOS: from previous week
+  // DEMOS: from THIS week's appointments
   let demoCount=0, demoNames=[];
-  if (prevWeek) {
-    for (const a of (prevWeek.appts||[])) {
-      if (a.outcome==='demo'||a.outcome==='canceled') { demoCount++; demoNames.push(a.cust); }
-    }
+  for (const a of (curWeek.appts||[])) {
+    if (a.outcome==='demo'||a.outcome==='canceled') { demoCount++; demoNames.push(a.cust); }
   }
   const demoPay = demoCount * (p.demo||0);
 
-  // COMMISSION PAID: sales whose jobEnd falls in previous week
+  // COMMISSION: sales whose job completion falls in THIS week
   let commPaid=0, salesPaid=0;
-  if (prevWeek) {
-    for (const w of D.weeks) {
-      for (const a of (w.appts||[])) {
-        if (a.outcome==='sale' && a.jobEnd && inWeek(a.jobEnd, prevWeek)) {
-          commPaid += (parseFloat(a.contract)||0) * ((p.comm||0)/100);
-          salesPaid++;
-        }
-      }
-    }
-  }
-
-  // QUEUED: jobs that completed THIS week (paid next week)
-  let commQueued=0, salesQueued=0;
   for (const w of D.weeks) {
     for (const a of (w.appts||[])) {
       if (a.outcome==='sale' && a.jobEnd && inWeek(a.jobEnd, curWeek)) {
-        commQueued += (parseFloat(a.contract)||0) * ((p.comm||0)/100);
-        salesQueued++;
+        commPaid += (parseFloat(a.contract)||0) * ((p.comm||0)/100);
+        salesPaid++;
       }
     }
   }
 
-  // PENDING: no completion date
+  // PENDING: sales with no completion date yet
   let commPending=0, salesPending=0;
   for (const w of D.weeks) {
     for (const a of (w.appts||[])) {
@@ -1106,14 +1174,13 @@ function calcWeek(idx) {
   }
 
   const total = base + demoPay + commPaid;
-  return { base, demoPay, demoCount, demoNames, commPaid, salesPaid, commQueued, salesQueued, commPending, salesPending, total };
+  return { base, demoPay, demoCount, demoNames, commPaid, salesPaid, commPending, salesPending, total };
 }
 
 function renderPay() {
   const { base, demoPay, demoCount, demoNames, commPaid, salesPaid,
-          commQueued, salesQueued, commPending, salesPending, total } = calcWeek(D.cur);
+          commPending, salesPending, total } = calcWeek(D.cur);
   const p = D.profile;
-  const isFirstWeek = D.cur === 0;
 
   // ── Earnings Dashboard ──
   let tBase=0,tDemo=0,tComm=0; let pendingOnce=0;
@@ -1145,12 +1212,6 @@ function renderPay() {
   // ── Pay Breakdown blocks ──
   let html = '';
 
-  if (isFirstWeek) {
-    html += `<div class="first-week-notice">
-      <strong>Week 1:</strong> Demo pay and commission appear from <strong>Week 2</strong> onward — earned last week, paid this week.
-    </div>`;
-  }
-
   html += `<div class="pay-block block-base">
     <div class="pay-block-head">
       <div class="pay-block-label">🕐 Base Pay — This Week</div>
@@ -1161,30 +1222,19 @@ function renderPay() {
 
   html += `<div class="pay-block block-demo">
     <div class="pay-block-head">
-      <div class="pay-block-label">🟡 Demo Pay — From Last Week</div>
+      <div class="pay-block-label">🟡 Demo Pay — This Week</div>
       <div class="pay-block-amount">${fMoney(demoPay)}</div>
     </div>
-    <div class="pay-block-detail">${demoCount > 0 ? `${demoCount} demo(s) × ${fMoney(p.demo)}` : isFirstWeek ? 'No previous week' : 'No demos last week'}</div>
+    <div class="pay-block-detail">${demoCount > 0 ? `${demoCount} demo(s) × ${fMoney(p.demo)}` : 'No demos this week'}</div>
   </div>`;
 
   html += `<div class="pay-block block-comm">
     <div class="pay-block-head">
-      <div class="pay-block-label">✅ Commission — Last Week's Completions</div>
+      <div class="pay-block-label">✅ Commission — Jobs Completed This Week</div>
       <div class="pay-block-amount">${fMoney(commPaid)}</div>
     </div>
-    <div class="pay-block-detail">${salesPaid > 0 ? `${salesPaid} job(s) completed last week · ${p.comm}% of contract` : isFirstWeek ? 'No previous week' : 'No jobs completed last week'}</div>
+    <div class="pay-block-detail">${salesPaid > 0 ? `${salesPaid} job(s) completed this week · ${p.comm}% of contract` : 'No jobs completed this week'}</div>
   </div>`;
-
-  if (commQueued > 0) {
-    html += `<div class="notice notice-queued">
-      <div class="notice-left"><div class="notice-icon">➡️</div>
-        <div><div class="notice-title">Queued for Next Week</div>
-          <div class="notice-sub">${salesQueued} job(s) completed this week — paid in Week ${D.cur+2}</div>
-        </div>
-      </div>
-      <div class="notice-amt">${fMoney(commQueued)}</div>
-    </div>`;
-  }
 
   if (commPending > 0) {
     html += `<div class="notice notice-pending">
@@ -1314,13 +1364,12 @@ function doPrint() {
       if (a.outcome === 'sale') {
         if (a.jobEnd) {
           const ciw = weekOfDate(a.jobEnd, D.weeks);
-          if      (ciw === idx - 1)               payStatus = 'Paid this week';
-          else if (ciw === idx)                   payStatus = 'Paid next week';
-          else if (ciw >= 0 && ciw < idx - 1)     payStatus = `Paid in Week ${ciw+2}`;
-          else                                    payStatus = 'Queued';
+          if      (ciw === idx)    payStatus = 'Paid this week';
+          else if (ciw >= 0)       payStatus = `Paid in Week ${ciw+1}`;
+          else                     payStatus = 'Commission paid';
         } else { payStatus = 'Pending completion'; }
       } else if (a.outcome === 'demo' || a.outcome === 'canceled') {
-        payStatus = 'Demo pay next week';
+        payStatus = 'Demo pay this week';
       } else if (a.outcome === 'pending') {
         payStatus = 'Outcome not set';
       }
@@ -1433,9 +1482,9 @@ function doPrint() {
             <td style="padding:9px 14px;background:#fffbeb;border:1.5px solid #fde68a;border-top:none;color:#6b7280;font-size:11px;">${demoCount} demo(s) × ${fMoney(p.demo)}</td>
           </tr>
           <tr>
-            <td style="padding:9px 14px;background:#f0faf5;border:1.5px solid #bbf7d0;border-top:none;font-weight:600;color:#16a34a;">✅ Commission (from last week's completions)</td>
+            <td style="padding:9px 14px;background:#f0faf5;border:1.5px solid #bbf7d0;border-top:none;font-weight:600;color:#16a34a;">✅ Commission (jobs completed this week)</td>
             <td style="padding:9px 14px;background:#f0faf5;border:1.5px solid #bbf7d0;border-top:none;text-align:right;font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:#16a34a;">${fMoney(commPaid)}</td>
-            <td style="padding:9px 14px;background:#f0faf5;border:1.5px solid #bbf7d0;border-top:none;color:#6b7280;font-size:11px;">${salesPaid} job(s) completed last week · ${p.comm}%</td>
+            <td style="padding:9px 14px;background:#f0faf5;border:1.5px solid #bbf7d0;border-top:none;color:#6b7280;font-size:11px;">${salesPaid} job(s) completed this week · ${p.comm}%</td>
           </tr>
           ${commQueued > 0 ? `<tr>
             <td style="padding:9px 14px;background:#f5f2ff;border:1.5px solid #c4b5fd;border-top:none;font-weight:600;color:#7c3aed;">➡️ Queued for Next Week</td>
@@ -1504,9 +1553,271 @@ function doPrint() {
   </div>`;
 
   document.getElementById('printPage').innerHTML = html;
-  document.getElementById('printPage').style.display = 'block';
-  window.print();
-  document.getElementById('printPage').style.display = 'none';
+
+  // Open a new window with just the print content — most reliable cross-browser approach
+  const win = window.open('', '_blank', 'width=850,height=700');
+  if (!win) {
+    alert('Please allow pop-ups for this page to enable printing.');
+    return;
+  }
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Pay Report — ${esc(p.name)} — Week ${idx+1}</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    body { font-family:'DM Sans',sans-serif; font-size:13px; color:#1c1a1a; background:#fff; }
+    @media print { @page { margin: 0.5in; } }
+  </style>
+</head>
+<body>${html}</body>
+</html>`);
+  win.document.close();
+  win.focus();
+  // Give fonts time to load then print
+  setTimeout(() => { win.print(); }, 600);
+}
+
+// ══════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════
+function switchTab(tab) {
+  document.getElementById('view-tracker').style.display = tab === 'tracker' ? 'block' : 'none';
+  document.getElementById('view-ledger').style.display  = tab === 'ledger'  ? 'block' : 'none';
+  document.getElementById('tab-tracker').classList.toggle('active', tab === 'tracker');
+  document.getElementById('tab-ledger').classList.toggle('active',  tab === 'ledger');
+  if (tab === 'ledger') renderLedger();
+}
+
+// ══════════════════════════════════════
+// LEDGER
+// ══════════════════════════════════════
+/*
+  D.paidItems = { itemKey: true }
+  Keys:
+    base_${weekId}   → base pay for a week
+    demo_${apptId}   → demo pay for an appointment
+    comm_${apptId}   → commission for a sale
+*/
+function ledgerKey(type, id) { return `${type}_${id}`; }
+function isPaid(key) { return !!(D.paidItems && D.paidItems[key]); }
+
+function togglePaid(key) {
+  if (!D.paidItems) D.paidItems = {};
+  D.paidItems[key] = !D.paidItems[key];
+  persist();
+  renderLedger();
+  // Also refresh earnings dashboard
+  renderPay();
+}
+
+function buildLedgerItems() {
+  const p = D.profile;
+  const items = [];
+
+  D.weeks.forEach((w, wIdx) => {
+    const wLabel = `Week ${wIdx+1}${w.s ? ' · '+fDate(w.s)+' – '+fDate(w.e) : ''}`;
+    const hrs = parseFloat(w.hrs)||0;
+
+    // Base pay
+    if (hrs > 0) {
+      const key = ledgerKey('base', w.id);
+      items.push({
+        key, type:'base', week: wIdx+1, weekLabel: wLabel,
+        description: 'Base Pay',
+        detail: `${hrs} hrs × ${fMoney(p.hourly)}/hr`,
+        amount: hrs * (p.hourly||0),
+        date: w.e || w.s || '',
+        paid: isPaid(key)
+      });
+    }
+
+    // Demo pay from this week's appointments
+    (w.appts||[]).forEach(a => {
+      if (a.outcome === 'demo' || a.outcome === 'canceled') {
+        const key = ledgerKey('demo', a.id);
+        items.push({
+          key, type:'demo', week: wIdx+1, weekLabel: wLabel,
+          description: `Demo — ${a.cust}`,
+          detail: a.outcome === 'canceled' ? 'Canceled Sale → Demo' : 'Demo',
+          amount: p.demo||0,
+          date: a.date || '',
+          paid: isPaid(key)
+        });
+      }
+    });
+
+    // Commission — from completed sales (any week, but completion falls in this week)
+    D.weeks.forEach(sw => {
+      (sw.appts||[]).forEach(a => {
+        if (a.outcome === 'sale' && a.jobEnd && inWeek(a.jobEnd, w)) {
+          const key = ledgerKey('comm', a.id);
+          // Only add once (avoid duplicates if already added via another week loop)
+          if (!items.find(i => i.key === key)) {
+            const amt = (parseFloat(a.contract)||0) * ((p.comm||0)/100);
+            items.push({
+              key, type:'comm', week: wIdx+1, weekLabel: wLabel,
+              description: `Commission — ${a.cust}`,
+              detail: `${fMoney(parseFloat(a.contract)||0)} contract × ${p.comm}%`,
+              amount: amt,
+              date: a.jobEnd || '',
+              paid: isPaid(key)
+            });
+          }
+        }
+      });
+    });
+  });
+
+  // Pending commissions (no jobEnd) — shown at bottom
+  D.weeks.forEach(sw => {
+    (sw.appts||[]).forEach(a => {
+      if (a.outcome === 'sale' && !a.jobEnd) {
+        const key = ledgerKey('comm', a.id);
+        if (!items.find(i => i.key === key)) {
+          const amt = (parseFloat(a.contract)||0) * ((p.comm||0)/100);
+          items.push({
+            key, type:'comm', week: '—', weekLabel: 'Pending',
+            description: `Commission — ${a.cust}`,
+            detail: `${fMoney(parseFloat(a.contract)||0)} × ${p.comm}% · Job not complete`,
+            amount: amt,
+            date: '',
+            paid: false,
+            pending: true
+          });
+        }
+      }
+    });
+  });
+
+  return items;
+}
+
+function renderLedger() {
+  const items = buildLedgerItems();
+  const totalEarned  = items.filter(i => !i.pending).reduce((s,i) => s+i.amount, 0);
+  const totalPaid    = items.filter(i => i.paid).reduce((s,i) => s+i.amount, 0);
+  const totalBalance = totalEarned - totalPaid;
+
+  // Summary strip
+  document.getElementById('ledgerSummary').innerHTML = `
+    <div class="ledger-summary">
+      <div class="ledger-sum-item ledger-sum-earned">
+        <div class="ledger-sum-val">${fMoney(totalEarned)}</div>
+        <div class="ledger-sum-lbl">Total Earned</div>
+      </div>
+      <div class="ledger-sum-item ledger-sum-paid">
+        <div class="ledger-sum-val">${fMoney(totalPaid)}</div>
+        <div class="ledger-sum-lbl">Received</div>
+      </div>
+      <div class="ledger-sum-item ledger-sum-balance">
+        <div class="ledger-sum-val">${fMoney(totalBalance)}</div>
+        <div class="ledger-sum-lbl">Outstanding</div>
+      </div>
+    </div>`;
+
+  if (!items.length) {
+    document.getElementById('ledgerBody').innerHTML = `<div class="empty"><div class="empty-icon">📒</div><div class="empty-text">No payable items yet.<br>Add appointments and hours to see your record here.</div></div>`;
+    return;
+  }
+
+  const typeLabel = { base:'Base Pay', demo:'Demo', comm:'Commission' };
+  const typePill  = t => `<span class="type-pill type-${t}">${typeLabel[t]||t}</span>`;
+
+  // Desktop table
+  const tableRows = items.map(item => {
+    const paidBtn = item.pending ? `<span style="font-size:12px;color:var(--blue);">⏳ Pending</span>` :
+      `<button class="paid-toggle ${item.paid?'paid':'unpaid'}" onclick="togglePaid('${item.key}')">
+        ${item.paid ? '✅ Paid' : '○ Mark Paid'}
+      </button>`;
+    return `<tr style="${item.pending?'opacity:0.55;':''}${item.paid?'background:#f9fffe;':''}">
+      <td style="color:var(--text2);font-size:12px;">${item.weekLabel}</td>
+      <td>${typePill(item.type)}</td>
+      <td>
+        <div style="font-weight:600;">${esc(item.description)}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">${item.detail}</div>
+      </td>
+      <td style="white-space:nowrap;">${item.date ? fDate(item.date) : '—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;font-size:15px;text-align:right;">${fMoney(item.amount)}</td>
+      <td style="text-align:right;">${paidBtn}</td>
+    </tr>`;
+  }).join('');
+
+  // Mobile cards
+  const mobileCards = items.map(item => {
+    const paidBtn = item.pending ? `<span style="font-size:11px;color:var(--blue);">⏳ Pending</span>` :
+      `<button class="paid-toggle ${item.paid?'paid':'unpaid'}" onclick="togglePaid('${item.key}')" style="font-size:12px;padding:5px 12px;">
+        ${item.paid ? '✅ Paid' : '○ Mark Paid'}
+      </button>`;
+    return `<div class="ledger-card" style="${item.pending?'opacity:0.55;':''}${item.paid?'background:#f9fffe;':''}">
+      <div class="ledger-card-top">
+        <div>
+          <div class="ledger-card-desc">${esc(item.description)}</div>
+          <div class="ledger-card-sub">${item.weekLabel} · ${item.date ? fDate(item.date) : 'No date'}</div>
+          <div style="margin-top:4px;">${typePill(item.type)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:18px;">${fMoney(item.amount)}</div>
+          <div style="margin-top:6px;">${paidBtn}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('ledgerBody').innerHTML = `
+    <div class="ledger-desktop" style="overflow-x:auto;">
+      <table class="ledger-table">
+        <thead><tr>
+          <th>Week</th><th>Type</th><th>Description</th><th>Date</th>
+          <th style="text-align:right;">Amount</th><th style="text-align:right;">Status</th>
+        </tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+    <div class="ledger-mobile">${mobileCards}</div>`;
+}
+
+// ══════════════════════════════════════
+// BACKUP & RESTORE
+// ══════════════════════════════════════
+function backupData() {
+  const name     = D.profile ? D.profile.name.replace(/\s+/g,'_') : 'canvasser';
+  const dateStr  = new Date().toISOString().split('T')[0];
+  const filename = `${name}_pay_backup_${dateStr}.json`;
+  const blob     = new Blob([JSON.stringify(D, null, 2)], { type: 'application/json' });
+  const url      = URL.createObjectURL(blob);
+  const a        = document.createElement('a');
+  a.href         = url;
+  a.download     = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function restoreData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed.profile || !parsed.weeks) {
+        alert('This file doesn\'t look like a valid backup. Please try again.');
+        return;
+      }
+      if (!confirm(`Restore backup for ${parsed.profile.name}?\n\nThis will replace your current data.`)) return;
+      D = parsed;
+      persist();
+      startApp();
+      alert('✅ Data restored successfully!');
+    } catch(err) {
+      alert('Could not read backup file. Make sure it\'s a valid backup JSON file.');
+    }
+  };
+  reader.readAsText(file);
+  // Reset input so same file can be selected again if needed
+  event.target.value = '';
 }
 
 init();
